@@ -11,7 +11,7 @@ type Props = {
     currentStep: number;
 };
 
-export const stepProgress: React.FC<Props> = ({ steps, currentStep }) => {
+export const StepProgress: React.FC<Props> = ({ steps, currentStep }) => {
     return (
         <View style={styles.container}>
             {steps.map((step, index) => {
