@@ -1,4 +1,4 @@
-import { getData, uploadData } from "@/api/api";
+import { getData, signIn, uploadData } from "@/api/api";
 import { Alert, Pressable, Text, View } from "react-native";
 
 export default function Index() {
@@ -36,6 +36,13 @@ export default function Index() {
         }}
       >
         <Text>Get data</Text>
+      </Pressable>
+      <Pressable
+        onPress={async () => {
+          signIn("test@mail.no", "passord123");
+        }}
+      >
+        <Text>Log inn</Text>
       </Pressable>
     </View>
   );
