@@ -1,6 +1,7 @@
 import { FirebaseError } from "firebase/app";
 import { addDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db, auth } from "@/firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export interface apiData {
     name: string, 
@@ -40,4 +41,8 @@ export async function getData(): Promise<[apiData[], string | null]> {
         const message = e instanceof Error ? e.message : "unknown error"
         return [[], message];
     }
+}
+
+export async function signIn(email: string, password: string) {
+    await signInWithEmailAndPassword(auth, email, password);
 }
