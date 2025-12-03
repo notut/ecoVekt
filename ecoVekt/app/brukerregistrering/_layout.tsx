@@ -1,0 +1,36 @@
+import { AuthContextProvider, useAuthSession } from "@/providers/authctx";
+import { router, Stack, useSegments } from "expo-router";
+import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+function AuthGate() {
+  const { userNameSession, isLoading } = useAuthSession();
+  const segments = useSegments() as string[];
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inProtected = segments[0] == "(protected)";
+
+    if (!userNameSession && inProtected) {
+      router.replace("./brukerregistrering/autentication");
+      return;
+    }
+
+    if (userNameSession && !inProtected) {
+      router.replace("/(tabs)");
+    }
+  }, [userNameSession, isLoading, segments]);
+
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export default function RootLayout() {
+  return (
+    <SafeAreaProvider>
+      <AuthContextProvider>
+        <AuthGate />
+      </AuthContextProvider>
+    </SafeAreaProvider>
+  );
+}
