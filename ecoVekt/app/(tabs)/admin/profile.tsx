@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Pressable, FlatList, Dimensions } from "react-native";
+import { View, Text, Pressable, FlatList, Dimensions, StyleSheet } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-
+import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
@@ -18,7 +18,10 @@ type TrashItemType = {
   type?: string;
 };
 
+
+
 export default function ProfilePage(): React.ReactElement {
+    const { signOut } = useAuthSession();
   const router = useRouter();
 
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
@@ -183,7 +186,7 @@ export default function ProfilePage(): React.ReactElement {
         <Text style={{ fontSize: 20, color: "#2f6f5b", fontWeight: "700" }}>Administrator</Text>
       </View>
 
-   // Profil informasjon
+   { /* Profil informasjon */}
       <View style={{ backgroundColor: "white", padding: 14, borderRadius: 8, borderWidth: 1, borderColor: "#d1e4da", marginBottom: 14 }}>
         <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Profil</Text>
         <View style={{ borderWidth: 1, borderColor: "#c7e0d4", padding: 10, borderRadius: 8 }}>
@@ -193,7 +196,7 @@ export default function ProfilePage(): React.ReactElement {
         </View>
       </View>
 
-  // Valgt avfallstyper
+  { /* Valgt avfallstyper */}
       <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Valgt avfall</Text>
       {!currentUser ? (
         <Text style={{ color: "#64748b", marginBottom: 12 }}>Logg inn for å se dine valgte avfallstyper</Text>
@@ -219,6 +222,7 @@ export default function ProfilePage(): React.ReactElement {
           ))}
         </View>
       )}
+
 
       <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Total mengde avfall</Text>
       <Text style={{ color: "#64748b", marginBottom: 8 }}>Siste 4 uker</Text>
@@ -265,7 +269,7 @@ export default function ProfilePage(): React.ReactElement {
         )}
       </View>
 
-        // Liste over innleveringer
+       { /* Liste over innleveringer*/}
       <FlatList
         data={trashItems}
         renderItem={renderTrashItem}
@@ -277,17 +281,23 @@ export default function ProfilePage(): React.ReactElement {
         contentContainerStyle={trashItems.length === 0 ? { flex: 1 } : undefined}
       />
 
-        // Logg ut knapp
-      <View style={{ alignItems: "center", marginTop: 10, marginBottom: 30 }}>
-        <Pressable
-          onPress={async () => {
-            router.replace("/brukerregistrering/login");
-          }}
-          style={{ backgroundColor: "#2f6f5b", paddingVertical: 10, paddingHorizontal: 30, borderRadius: 20 }}
-        >
-          <Text style={{ color: "white", fontWeight: "700" }}>Logg ut</Text>
-        </Pressable>
-      </View>
-    </View>
+         { /* Logg ut knapp*/}
+
+         <View>
+          <Pressable style={styles.button} onPress={signOut}>
+            <Text style={{ color: "white", fontWeight: "600" }}>Logg ut</Text>
+          </Pressable>
+          </View>
+         </View>
   );
+        
 }
+
+const styles = StyleSheet.create({
+    button: {
+        backgroundColor: "#ef4444",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 6,
+    },
+});
