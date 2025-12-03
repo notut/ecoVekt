@@ -77,7 +77,9 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await fbSignOut(auth);
+    await AsyncStorage.removeItem("authSession");
     setUserSession(null);
+    router.replace("/brukerregistrering/autentication");
   };
 
   return (
