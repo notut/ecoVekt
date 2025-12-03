@@ -1,21 +1,12 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Pressable, FlatList, Dimensions } from "react-native";
+import { View, Text, Pressable, FlatList, Dimensions, StyleSheet } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
-// Pie Chart
 import { PieChart } from "react-native-chart-kit";
-
 
 const auth = getAuth();
 const db = getFirestore();
@@ -27,63 +18,71 @@ type TrashItemType = {
   type?: string;
 };
 
-export default function ProfilePage(): React.ReactElement {
-  const router = useRouter();
 
-  // Local auth state 
-  const [user, setUser] = useState<User | null>(auth.currentUser);
-  const [userNameSession, setUserNameSession] = useState<string | null>(
-    user ? user.displayName || user.email : null
-  );
+
+export default function ProfilePage(): React.ReactElement {
+    const { signOut } = useAuthSession();
+  const router = useRouter();
 
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Chart data state PieChart
+  // chart data state PieChart
   const [chartData, setChartData] = useState<
-    {
-      name: string;
-      population: number;
-      color: string;
-      legendFontColor: string;
-      legendFontSize: number;
-    }[]
+    { name: string; population: number; color: string; legendFontColor: string; legendFontSize: number }[]
   >([]);
 
-  // Lytt på auth state endringer
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setUserNameSession(u ? u.displayName || u.email : null);
-    });
-    return () => unsubscribe();
-  }, []);
+  // total for tooltip (for eks. restavfall)
+  const [tooltipText, setTooltipText] = useState<string>("");
 
-  // Farger generator for pie chart
+  // Valgt avfallstyper
+  const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
+
+  // auth user
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+
   const generateColors = (n: number) => {
     const colors: string[] = [];
     const hueStep = Math.floor(360 / Math.max(1, n));
     for (let i = 0; i < n; i++) {
       const hue = (i * hueStep) % 360;
-      colors.push(`hsl(${hue}deg 70% 55%)`);
+      colors.push(`hsl(${hue}deg 65% 45%)`);
     }
     return colors;
   };
 
-  //hent brukerens kastede elementer fra Firestore
-  const getMyTrash = async () => {
-    if (!user) {
-      setTrashItems([]);
-      setChartData([]);
-      return;
-    }
-
+  // Hent alle trash-items fra Firestore
+  const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      const yourTrashCol = collection(db, "yourTrash");
+      // hent selectedWaste hvis uid finnes
+      if (uid) {
+        try {
+          const userDocRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const data = userSnap.data() as any;
+            const arr = Array.isArray(data.selectedWaste) ? data.selectedWaste : [];
+            setSelectedWaste(arr);
+          } else {
+            setSelectedWaste([]);
+          }
+        } catch (e) {
+          console.error("Feil ved henting av selectedWaste:", e);
+          setSelectedWaste([]);
+        }
+      } else {
+        setSelectedWaste([]);
+      }
 
-      // Hent alle dokumenter hvor uid == innlogget bruker
-      const q = query(yourTrashCol, where("uid", "==", user.uid));
+      // hent yourTrash 
+      const yourTrashCol = collection(db, "yourTrash");
+      let q;
+      if (uid) {
+        q = query(yourTrashCol, where("uid", "==", uid));
+      } else {
+        q = query(yourTrashCol);
+      }
       const snap = await getDocs(q);
 
       const results: TrashItemType[] = [];
@@ -97,22 +96,17 @@ export default function ProfilePage(): React.ReactElement {
         });
       });
 
-      // Sett liste i state
       setTrashItems(results);
 
-      // Lag chart data hvis noen elementer har `type`
-      // Beregn totalsum per type
+      // Forbered data for PieChart
       const totals: Record<string, number> = {};
-      let anyType = false;
       results.forEach((r) => {
-        if (r.type) {
-          anyType = true;
-          totals[r.type] = (totals[r.type] || 0) + (r.weight || 0);
-        }
+        const t = r.type ?? "Ukjent";
+        totals[t] = (totals[t] || 0) + (r.weight || 0);
       });
 
-      if (anyType) {
-        const types = Object.keys(totals).filter((k) => totals[k] > 0);
+      const types = Object.keys(totals).filter((k) => totals[k] > 0);
+      if (types.length > 0) {
         const colors = generateColors(types.length);
         const arr = types.map((t, idx) => ({
           name: t,
@@ -122,44 +116,60 @@ export default function ProfilePage(): React.ReactElement {
           legendFontSize: 12,
         }));
         setChartData(arr);
+
+        // Sett tooltip-tekst for mest vanlige avfallstype
+        const prefered = ["Restavfall", "Restavfall ", "restavfall", "Rest"];
+        let chosen = types[0];
+        for (const p of prefered) {
+          if (types.includes(p)) {
+            chosen = p;
+            break;
+          }
+        }
+        const totalChosen = totals[chosen] ?? 0;
+        setTooltipText(`Du har de tre siste månedene kastet ${totalChosen} kg ${chosen.toLowerCase()}.`);
       } else {
-        // Hvis ingen type-data finnes, tøm chartData 
         setChartData([]);
+        setTooltipText("");
       }
     } catch (err) {
       console.error("Feil ved henting fra yourTrash:", err);
       setTrashItems([]);
       setChartData([]);
+      setTooltipText("");
+      setSelectedWaste([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Kjører når screen får fokus og når user endres
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u);
+      getAllData(u ? u.uid : null);
+    });
+    return () => unsub();
+  }, []);
+
+  // Kjør når screen får fokus
   useFocusEffect(
     useCallback(() => {
-      getMyTrash();
-    }, [user?.uid])
+      getAllData(currentUser ? currentUser.uid : null);
+    }, [currentUser?.uid])
   );
 
-  // Render-funksjon for hvert element,  viser id, weight og dato
+  // Render hvert element
   const renderTrashItem = ({ item }: { item: TrashItemType }) => {
-  
     const shortId = item.id ? item.id.slice(0, 8) : item.id;
     return (
-      <View className="bg-white/5 p-4 rounded-xl">
-        <Text className="text-white font-semibold">ID: {shortId}</Text>
-        <Text className="text-gray-300 mt-1">Vekt: {item.weight} kg</Text>
+      <View style={{ backgroundColor: "rgba(255,255,255,0.05)", padding: 12, borderRadius: 12 }}>
+        <Text style={{ color: "#0f172a", fontWeight: "600" }}>ID: {shortId}</Text>
+        <Text style={{ color: "#334155", marginTop: 6 }}>Vekt: {item.weight} kg</Text>
         {item.createdAt ? (
-          <Text className="text-gray-400 text-xs mt-1">
+          <Text style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
             Dato:{" "}
-            {typeof item.createdAt.toDate === "function"
-              ? item.createdAt.toDate().toLocaleString()
-              : String(item.createdAt)}
+            {typeof item.createdAt?.toDate === "function" ? item.createdAt.toDate().toLocaleDateString() : String(item.createdAt)}
           </Text>
-        ) : null}
-        {item.type ? (
-          <Text className="text-gray-300 text-sm mt-1">Type: {item.type}</Text>
         ) : null}
       </View>
     );
@@ -167,85 +177,127 @@ export default function ProfilePage(): React.ReactElement {
 
   const ItemSeparator = () => <View style={{ height: 8 }} />;
 
-  // Chart dimensions
-  const screenWidth = Dimensions.get("window").width - 48; // padding px-6 begge sider
+  // Chart dim
+  const screenWidth = Dimensions.get("window").width - 48;
 
   return (
-    <View className="flex-1 bg-slate-700 px-6 py-4">
-      <Text className="text-white text-2xl font-semibold mb-4">
-        Hei {userNameSession ?? "gjest"}!
-      </Text>
+    <View style={{ flex: 1, backgroundColor: "#f8fafc", paddingHorizontal: 16, paddingTop: 8 }}>
+      <View style={{ backgroundColor: "#dbe7df", paddingVertical: 18, paddingHorizontal: 12, borderRadius: 6, marginBottom: 12 }}>
+        <Text style={{ fontSize: 20, color: "#2f6f5b", fontWeight: "700" }}>Administrator</Text>
+      </View>
 
-      // henter pie-chart for vektfordeling per type
-      <View style={{ marginBottom: 16 }}>
-        <Text className="text-white text-lg font-semibold mb-2">
-          Vektfordeling per type
-        </Text>
+   { /* Profil informasjon */}
+      <View style={{ backgroundColor: "white", padding: 14, borderRadius: 8, borderWidth: 1, borderColor: "#d1e4da", marginBottom: 14 }}>
+        <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Profil</Text>
+        <View style={{ borderWidth: 1, borderColor: "#c7e0d4", padding: 10, borderRadius: 8 }}>
+          <Text style={{ color: "#334155" }}>Bedrift:</Text>
+          <Text style={{ color: "#334155", marginTop: 6 }}>Ansattnummer:</Text>
+          <Text style={{ color: "#334155", marginTop: 6 }}>Email:</Text>
+        </View>
+      </View>
 
-        {loading ? (
-          <Text className="text-gray-300">Laster diagram...</Text>
-        ) : chartData.length > 0 ? (
-          <PieChart
-            data={chartData}
-            width={screenWidth}
-            height={220}
-            accessor={"population"}
-            backgroundColor={"transparent"}
-            paddingLeft={"15"}
-            absolute={false}
-            chartConfig={{
-              color: (opacity = 1) => `rgba(255,255,255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255,255,255, ${opacity})`,
-            }}
-            hasLegend={true}
-          />
+  { /* Valgt avfallstyper */}
+      <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Valgt avfall</Text>
+      {!currentUser ? (
+        <Text style={{ color: "#64748b", marginBottom: 12 }}>Logg inn for å se dine valgte avfallstyper</Text>
+      ) : selectedWaste.length === 0 ? (
+        <Text style={{ color: "#64748b", marginBottom: 12 }}>Ingen valgte avfallstyper. Legg til flere.</Text>
+      ) : (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 18 }}>
+          {selectedWaste.map((t) => (
+            <View
+              key={t}
+              style={{
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#2f6f5b",
+                paddingVertical: 8,
+                paddingHorizontal: 14,
+                marginRight: 8,
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ color: "#14332a" }}>{t}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+
+      <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Total mengde avfall</Text>
+      <Text style={{ color: "#64748b", marginBottom: 8 }}>Siste 4 uker</Text>
+
+      <View style={{ alignItems: "center", marginBottom: 12 }}>
+
+        {chartData.length > 0 ? (
+          <View style={{ width: screenWidth, alignItems: "center", justifyContent: "center" }}>
+            <PieChart
+              data={chartData}
+              width={screenWidth - 40}
+              height={220}
+              accessor={"population"}
+              backgroundColor={"transparent"}
+              paddingLeft={"15"}
+              absolute={false}
+              chartConfig={{
+                color: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0,0,0, ${opacity})`,
+              }}
+              hasLegend={false}
+            />
+
+            {tooltipText ? (
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 48,
+                  left: (screenWidth - (screenWidth - 40)) / 2 + 16,
+                  right: (screenWidth - (screenWidth - 40)) / 2 + 16,
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ backgroundColor: "rgba(255,255,255,0.95)", padding: 12, borderRadius: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6 }}>
+                  <Text style={{ color: "#0f172a", textAlign: "center" }}>{tooltipText}</Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
         ) : (
-          <Text className="text-gray-300">
-            {trashItems.length === 0
-              ? loading
-                ? "Laster..."
-                : "Ingen innleveringer funnet."
-              : "Ingen type-data tilgjengelig for pie-chart."}
-          </Text>
+          <View style={{ width: screenWidth - 40, height: 220, alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderRadius: 120 }}>
+            <Text style={{ color: "#64748b" }}>{loading ? "Laster..." : "Ingen data for diagram"}</Text>
+          </View>
         )}
       </View>
 
-        // liste over innleveringer
-        
-      <Text className="text-white text-lg font-semibold mb-2">Dine innleveringer</Text>
-
+       { /* Liste over innleveringer*/}
       <FlatList
         data={trashItems}
         renderItem={renderTrashItem}
         keyExtractor={(item) => item.id}
         ItemSeparatorComponent={ItemSeparator}
         ListEmptyComponent={() => (
-          <Text className="text-gray-300 text-center mt-4">
-            {loading ? "Laster..." : "Du har ingen innleveringer."}
-          </Text>
+          <Text style={{ color: "#cbd5e1", textAlign: "center", marginTop: 16 }}>{loading ? "Laster..." : "Ingen innleveringer."}</Text>
         )}
         contentContainerStyle={trashItems.length === 0 ? { flex: 1 } : undefined}
       />
 
-      // logg ut
-      {user ? (
-        <Pressable
-          onPress={async () => {
-            await auth.signOut();
-        
-            router.replace("/logIn");
-          }}
-          className="bg-red-500 px-6 py-3 rounded-xl shadow-md mt-4"
-        >
-          <Text className="text-white text-lg font-semibold">Logg ut</Text>
-        </Pressable>
-      ) : (
-        <Link href="/logIn" asChild>
-          <Pressable className="bg-blue-600 px-6 py-3 rounded-xl shadow-md mt-4">
-            <Text className="text-white text-lg font-semibold">Logg inn</Text>
+         { /* Logg ut knapp*/}
+
+         <View>
+          <Pressable style={styles.button} onPress={signOut}>
+            <Text style={{ color: "white", fontWeight: "600" }}>Logg ut</Text>
           </Pressable>
-        </Link>
-      )}
-    </View>
+          </View>
+         </View>
   );
+        
 }
+
+const styles = StyleSheet.create({
+    button: {
+        backgroundColor: "#ef4444",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 6,
+    },
+});
