@@ -1,6 +1,6 @@
 import { collection, getDocs } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import TagsList from "../../components/TagsList";
 import { db } from "../../firebaseConfig";
 
@@ -51,13 +51,22 @@ export default function SetupBusiness() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Velg hvilke typer avfall du 
-bruker i din bedrift:</Text>
+      <Text style={styles.title}>Velg hvilke typer avfall du bruker i din bedrift:</Text>
+      
+      {/* Assuming TagsList now accepts 'items', 'selectedItems', and 'onToggle' */}
       <TagsList
         items={trashTypes}
         selectedItems={selected}
         onToggle={toggleSelection}
       />
+
+      {/* knappen videre snere*/}
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={() => { /* ingenting skjer atm */ }}
+      >
+        <Text style={styles.buttonText}>Fortsett</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -75,9 +84,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: 30,
     marginBottom: 20,
-    textAlign: "center",
+    fontFamily: "Poppins_400Regular",
+    textAlign: "left",
+    color: "#507C6D",
+  },
+  button: {
+    position: "absolute",
+    bottom: 30,
+    alignSelf: "center",
+    backgroundColor: "#507C6D",
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+  },
+  buttonText: {
+    color: "#ffff",
+    fontSize: 16,
+    fontFamily: "Poppins_500Medium",
   },
 });

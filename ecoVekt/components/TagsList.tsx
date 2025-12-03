@@ -43,21 +43,21 @@ const styles = StyleSheet.create({
   tag: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#F8F7F5",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#D1D1D6",
+    borderColor: "#507C6D",
   },
   tagSelected: {
     backgroundColor: "#507C6D",
-    borderColor: "#507C6D",
   },
   tagText: {
     fontSize: 15,
-    color: "#333",
+    color: "#525252",
+    fontFamily: "Poppins_400Regular",
   },
   tagTextSelected: {
     color: "#fff",
-    fontWeight: "600",
+    fontFamily: "Poppins_400Regular",
   },
 });
