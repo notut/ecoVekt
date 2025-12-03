@@ -10,14 +10,15 @@ function AuthGate() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inProtected = segments[0] == "(protected)";
+    const inProtected = segments[0] == "(tabs)";
+    const onAuthScreen = segments[0] == "brukerregistrering";
 
     if (!userNameSession && inProtected) {
       router.replace("./brukerregistrering/autentication");
       return;
     }
 
-    if (userNameSession && !inProtected) {
+    if (userNameSession && onAuthScreen) {
       router.replace("/(tabs)");
     }
   }, [userNameSession, isLoading, segments]);

@@ -12,7 +12,7 @@ export default function Welcome() {
     Poppins_700Bold,
   });
 
-  // Show a simple loading indicator while fonts load
+  // Font Loading
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
