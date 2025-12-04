@@ -13,10 +13,17 @@ import {
   TextInput,
   View,
 } from "react-native";
+import LoginScreen from "./login";
+import { useLocalSearchParams } from "expo-router";
 
 export default function AuthenticationScreen() {
   const { signIn } = useAuthSession();
-  const [isSignUp, setIsSignUp] = useState(false);
+
+  const params = useLocalSearchParams();
+  const startInSignUp = params.signup === "true";
+
+  const [isSignUp, setIsSignUp] = useState<boolean>(startInSignUp);
+
   const [userEmail, setUserEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -58,6 +65,10 @@ export default function AuthenticationScreen() {
     }
     await signIn(email, password);
   };
+
+  if (!isSignUp) {
+    return <LoginScreen />;
+  }
 
   return (
     <View style={styles.screen}>

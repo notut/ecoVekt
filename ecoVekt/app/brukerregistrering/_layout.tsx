@@ -14,7 +14,7 @@ function AuthGate() {
     const onAuthScreen = segments[0] == "brukerregistrering";
 
     if (!userNameSession && inProtected) {
-      router.replace("./brukerregistrering/autentication");
+      router.replace("/brukerregistrering/login");
       return;
     }
 
