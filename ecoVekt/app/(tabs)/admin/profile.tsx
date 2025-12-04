@@ -1,11 +1,27 @@
+// app/(tabs)/admin/profile.tsx
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Pressable, FlatList, Dimensions, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  FlatList,
+  Dimensions,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
-
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { PieChart } from "react-native-chart-kit";
 
 const auth = getAuth();
@@ -18,10 +34,8 @@ type TrashItemType = {
   type?: string;
 };
 
-
-
 export default function ProfilePage(): React.ReactElement {
-    const { signOut } = useAuthSession();
+  const { signOut } = useAuthSession();
   const router = useRouter();
 
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
@@ -55,27 +69,7 @@ export default function ProfilePage(): React.ReactElement {
   const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      // hent selectedWaste hvis uid finnes
-      if (uid) {
-        try {
-          const userDocRef = doc(db, "users", uid);
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            const data = userSnap.data() as any;
-            const arr = Array.isArray(data.selectedWaste) ? data.selectedWaste : [];
-            setSelectedWaste(arr);
-          } else {
-            setSelectedWaste([]);
-          }
-        } catch (e) {
-          console.error("Feil ved henting av selectedWaste:", e);
-          setSelectedWaste([]);
-        }
-      } else {
-        setSelectedWaste([]);
-      }
-
-      // hent yourTrash 
+      // hent yourTrash
       const yourTrashCol = collection(db, "yourTrash");
       let q;
       if (uid) {
@@ -137,7 +131,6 @@ export default function ProfilePage(): React.ReactElement {
       setTrashItems([]);
       setChartData([]);
       setTooltipText("");
-      setSelectedWaste([]);
     } finally {
       setLoading(false);
     }
@@ -149,12 +142,45 @@ export default function ProfilePage(): React.ReactElement {
       getAllData(u ? u.uid : null);
     });
     return () => unsub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Kjør når screen får fokus
+  // Hent selectedWaste fra users/{uid} når screen får fokus
   useFocusEffect(
     useCallback(() => {
+      let mounted = true;
+
+      const fetchSelectedWaste = async () => {
+        try {
+          const user = currentUser;
+          if (!user) {
+            if (mounted) setSelectedWaste([]);
+            return;
+          }
+
+          const userDocRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userDocRef);
+
+          if (!mounted) return;
+          if (userSnap.exists()) {
+            const data = userSnap.data() as any;
+            const arr = Array.isArray(data.selectedWaste) ? data.selectedWaste : [];
+            setSelectedWaste(arr);
+          } else {
+            setSelectedWaste([]);
+          }
+        } catch (e) {
+          console.error("Feil ved henting av selectedWaste ved fokus:", e);
+        }
+      };
+
+      // kall både selectedWaste-henting og yourTrash-henting
+      fetchSelectedWaste();
       getAllData(currentUser ? currentUser.uid : null);
+
+      return () => {
+        mounted = false;
+      };
     }, [currentUser?.uid])
   );
 
@@ -162,15 +188,18 @@ export default function ProfilePage(): React.ReactElement {
   const renderTrashItem = ({ item }: { item: TrashItemType }) => {
     const shortId = item.id ? item.id.slice(0, 8) : item.id;
     return (
-      <View style={{ backgroundColor: "rgba(255,255,255,0.05)", padding: 12, borderRadius: 12 }}>
-        <Text style={{ color: "#0f172a", fontWeight: "600" }}>ID: {shortId}</Text>
-        <Text style={{ color: "#334155", marginTop: 6 }}>Vekt: {item.weight} kg</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>ID: {shortId}</Text>
+        <Text style={styles.cardSub}>Vekt: {item.weight} kg</Text>
         {item.createdAt ? (
-          <Text style={{ color: "#64748b", fontSize: 12, marginTop: 6 }}>
+          <Text style={styles.cardDate}>
             Dato:{" "}
-            {typeof item.createdAt?.toDate === "function" ? item.createdAt.toDate().toLocaleDateString() : String(item.createdAt)}
+            {typeof item.createdAt?.toDate === "function"
+              ? item.createdAt.toDate().toLocaleDateString()
+              : String(item.createdAt)}
           </Text>
         ) : null}
+        {item.type ? <Text style={styles.cardType}>Type: {item.type}</Text> : null}
       </View>
     );
   };
@@ -180,56 +209,69 @@ export default function ProfilePage(): React.ReactElement {
   // Chart dim
   const screenWidth = Dimensions.get("window").width - 48;
 
+  // Logout handler: venter på signOut fra provider og navigerer til login
+  const handleLogout = async () => {
+    try {
+      await signOut(); // provider gjør fbSignOut
+      // send brukeren til login (tilpass sti hvis nødvendig)
+      router.replace("/brukerregistrering/autentication");
+    } catch (e) {
+      console.error("Logout error:", e);
+      // fallback: prøv likevel å navigere
+      try {
+        router.replace("/brukerregistrering/autentication");
+      } catch {}
+    }
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8fafc", paddingHorizontal: 16, paddingTop: 8 }}>
-      <View style={{ backgroundColor: "#dbe7df", paddingVertical: 18, paddingHorizontal: 12, borderRadius: 6, marginBottom: 12 }}>
-        <Text style={{ fontSize: 20, color: "#2f6f5b", fontWeight: "700" }}>Administrator</Text>
+    <View style={styles.container}>
+      <View style={styles.adminHeader}>
+        <Text style={styles.adminHeaderText}>Administrator</Text>
       </View>
 
-   { /* Profil informasjon */}
-      <View style={{ backgroundColor: "white", padding: 14, borderRadius: 8, borderWidth: 1, borderColor: "#d1e4da", marginBottom: 14 }}>
-        <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Profil</Text>
-        <View style={{ borderWidth: 1, borderColor: "#c7e0d4", padding: 10, borderRadius: 8 }}>
-          <Text style={{ color: "#334155" }}>Bedrift:</Text>
-          <Text style={{ color: "#334155", marginTop: 6 }}>Ansattnummer:</Text>
-          <Text style={{ color: "#334155", marginTop: 6 }}>Email:</Text>
+      <View style={styles.profileBox}>
+        <Text style={styles.profileTitle}>Profil</Text>
+        <View style={styles.profileInner}>
+          <Text style={styles.profileText}>Bedrift:</Text>
+          <Text style={styles.profileText}>Ansattnummer:</Text>
+          <Text style={styles.profileText}>Email:</Text>
         </View>
       </View>
 
-  { /* Valgt avfallstyper */}
-      <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Valgt avfall</Text>
+      <Text style={styles.sectionTitle}>Valgt avfall</Text>
+
       {!currentUser ? (
-        <Text style={{ color: "#64748b", marginBottom: 12 }}>Logg inn for å se dine valgte avfallstyper</Text>
+        <Text style={styles.hintText}>Logg inn for å se dine valgte avfallstyper</Text>
       ) : selectedWaste.length === 0 ? (
-        <Text style={{ color: "#64748b", marginBottom: 12 }}>Ingen valgte avfallstyper. Legg til flere.</Text>
+        <Text style={styles.hintText}>Ingen valgte avfallstyper. Legg til flere.</Text>
       ) : (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 18 }}>
+        <View style={styles.chipsWrap}>
           {selectedWaste.map((t) => (
-            <View
-              key={t}
-              style={{
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: "#2f6f5b",
-                paddingVertical: 8,
-                paddingHorizontal: 14,
-                marginRight: 8,
-                marginBottom: 8,
-              }}
-            >
-              <Text style={{ color: "#14332a" }}>{t}</Text>
+            <View key={t} style={styles.chip}>
+              <Text style={styles.chipText}>{t}</Text>
             </View>
           ))}
         </View>
       )}
 
+      <Pressable
+        onPress={() => router.push("./addWaste")}
+        style={styles.addMoreButton}
+      >
+        <Text style={styles.addMoreText}>Legg til mer</Text>
+      </Pressable>
 
-      <Text style={{ color: "#0f172a", fontWeight: "700", marginBottom: 8 }}>Total mengde avfall</Text>
-      <Text style={{ color: "#64748b", marginBottom: 8 }}>Siste 4 uker</Text>
+      <Text style={styles.sectionTitle}>Total mengde avfall</Text>
+      <Text style={styles.hintText}>Siste 4 uker</Text>
 
       <View style={{ alignItems: "center", marginBottom: 12 }}>
-
-        {chartData.length > 0 ? (
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator />
+            <Text style={styles.hintText}>Laster diagram...</Text>
+          </View>
+        ) : chartData.length > 0 ? (
           <View style={{ width: screenWidth, alignItems: "center", justifyContent: "center" }}>
             <PieChart
               data={chartData}
@@ -247,17 +289,9 @@ export default function ProfilePage(): React.ReactElement {
             />
 
             {tooltipText ? (
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: 48,
-                  left: (screenWidth - (screenWidth - 40)) / 2 + 16,
-                  right: (screenWidth - (screenWidth - 40)) / 2 + 16,
-                  alignItems: "center",
-                }}
-              >
-                <View style={{ backgroundColor: "rgba(255,255,255,0.95)", padding: 12, borderRadius: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6 }}>
-                  <Text style={{ color: "#0f172a", textAlign: "center" }}>{tooltipText}</Text>
+              <View style={styles.tooltipWrap}>
+                <View style={styles.tooltipBox}>
+                  <Text style={styles.tooltipText}>{tooltipText}</Text>
                 </View>
               </View>
             ) : null}
@@ -269,35 +303,80 @@ export default function ProfilePage(): React.ReactElement {
         )}
       </View>
 
-       { /* Liste over innleveringer*/}
       <FlatList
         data={trashItems}
         renderItem={renderTrashItem}
         keyExtractor={(item) => item.id}
         ItemSeparatorComponent={ItemSeparator}
         ListEmptyComponent={() => (
-          <Text style={{ color: "#cbd5e1", textAlign: "center", marginTop: 16 }}>{loading ? "Laster..." : "Ingen innleveringer."}</Text>
+          <Text style={styles.emptyText}>{loading ? "Laster..." : "Ingen innleveringer."}</Text>
         )}
         contentContainerStyle={trashItems.length === 0 ? { flex: 1 } : undefined}
       />
 
-         { /* Logg ut knapp*/}
-
-         <View>
-          <Pressable style={styles.button} onPress={signOut}>
-            <Text style={{ color: "white", fontWeight: "600" }}>Logg ut</Text>
-          </Pressable>
-          </View>
-         </View>
+      <View style={styles.logoutWrap}>
+        <Pressable style={styles.button} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Logg ut</Text>
+        </Pressable>
+      </View>
+    </View>
   );
-        
 }
 
 const styles = StyleSheet.create({
-    button: {
-        backgroundColor: "#ef4444",
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 6,
-    },
+  container: { flex: 1, backgroundColor: "#f8fafc", paddingHorizontal: 16, paddingTop: 8 },
+  adminHeader: { backgroundColor: "#dbe7df", paddingVertical: 18, paddingHorizontal: 12, borderRadius: 6, marginBottom: 12 },
+  adminHeaderText: { fontSize: 20, color: "#2f6f5b", fontWeight: "700" },
+
+  profileBox: { backgroundColor: "white", padding: 14, borderRadius: 8, borderWidth: 1, borderColor: "#d1e4da", marginBottom: 14 },
+  profileTitle: { color: "#0f172a", fontWeight: "700", marginBottom: 8 },
+  profileInner: { borderWidth: 1, borderColor: "#c7e0d4", padding: 10, borderRadius: 8 },
+  profileText: { color: "#334155", marginTop: 6 },
+
+  sectionTitle: { color: "#0f172a", fontWeight: "700", marginBottom: 8, marginTop: 6 },
+  hintText: { color: "#64748b", marginBottom: 12 },
+
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 18 },
+  chip: { borderRadius: 20, borderWidth: 1, borderColor: "#2f6f5b", paddingVertical: 8, paddingHorizontal: 14, marginRight: 8, marginBottom: 8 },
+  chipText: { color: "#14332a" },
+  addMoreButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#2f6f5b",
+    alignSelf: "flex-start",
+    marginBottom: 20,
+  },
+  addMoreText: { color: "#2f6f5b", fontWeight: "600" },
+
+  tooltipWrap: {
+    position: "absolute",
+    bottom: 48,
+    left: 16,
+    right: 16,
+    alignItems: "center",
+  },
+  tooltipBox: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    padding: 12,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  tooltipText: { color: "#0f172a", textAlign: "center" },
+
+  card: { backgroundColor: "rgba(255,255,255,0.05)", padding: 12, borderRadius: 12, marginBottom: 8 },
+  cardTitle: { color: "#0f172a", fontWeight: "600" },
+  cardSub: { color: "#334155", marginTop: 6 },
+  cardDate: { color: "#64748b", fontSize: 12, marginTop: 6 },
+  cardType: { color: "#334155", marginTop: 6 },
+
+  emptyText: { color: "#cbd5e1", textAlign: "center", marginTop: 16 },
+
+  logoutWrap: { marginTop: 12, alignItems: "center", marginBottom: 24 },
+  button: { backgroundColor: "#ef4444", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 6 },
+  buttonText: { color: "white", fontWeight: "600" },
+  center: { alignItems: "center", justifyContent: "center" },
 });
