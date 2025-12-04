@@ -7,95 +7,108 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthSession } from "@/providers/authctx";
+import { router } from "expo-router";
 
+const main_green = "#5F9D84";
+const light_green = "#7EAC99";
+const dark_green = "#507C6D";
+const background_color = "#FFFFFF";
+const text_box_color = "#F8F7F5";
+const text_color = "#525252";
 
-const main_green = "#5F9D84"
-const light_green = "#7EAC99"
-const dark_green = "#507C6D"
-const background_color = "#FFFFFF"
-const text_box_color = "#F8F7F5"
-const text_color = "#525252"
+export const LoginScreen: React.FC = () => {
+  const { signIn, isLoading } = useAuthSession();
 
-export const login: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-const handleLogin = () => {
-    // TODO: kall API / naviger videre
-    console.log("Logging in with:", email, password);
+  // kobler opp signIn fra authentication
+  const handleLogin = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      alert("Skriv inn korrekt e-post og passord");
+      return;
+    }
+    await signIn(trimmedEmail, password);
   };
 
- const handleRegister = () => {
-    // TODO: naviger til registrering
+  const handleRegister = () => {
+    router.push("/brukerregistrering/autentication?signup=true");
   };
 
- return (
-  <SafeAreaView style={styles.safe}>
-    <View style={styles.container}>
-      {/* TOPP-FORM / HEADER */}
-      <View style={styles.topShape}>
-        <View style={styles.logoCircle}>
-          {/* Bytt ut med SVG/logo-image om du har */}
-          <Text style={styles.logoIcon}>🍃</Text>
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        {/* TOPP-FORM / HEADER */}
+        <View style={styles.topShape}>
+          <View style={styles.logoCircle}>
+            {/* Bytt ut med SVG/logo-image om du har */}
+            <Text style={styles.logoIcon}>🍃</Text>
+          </View>
         </View>
-      </View>
-
-      {/* INNHOLD */}
-      <View style={styles.content}>
-        {/* E-post */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Epost</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Skriv inn epost"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-        </View>
-
-        {/* Passord */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>Passord</Text>
-          <View style={styles.passwordRow}>
+        {/* INNHOLD */}
+        <View style={styles.content}>
+          {/* E-post */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Epost</Text>
             <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Skriv inn passord"
-              secureTextEntry={!showPassword}
-              style={[styles.input, styles.passwordInput]}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Skriv inn epost"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={styles.input}
             />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword(prev => !prev)}
-            >
-              {/* Her kan du bruke f.eks. react-native-vector-icons */}
-              <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
+          </View>
+
+          {/* Passord */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Passord</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Skriv inn passord"
+                secureTextEntry={!showPassword}
+                style={[styles.input, styles.passwordInput]}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword((prev) => !prev)}
+              >
+                {/* Her kan du bruke f.eks. react-native-vector-icons */}
+                <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Logg inn knapp */}
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.primaryButtonText}>Logg inn</Text>
+          </TouchableOpacity>
+
+          {/* Registrer deg tekst */}
+          <View style={styles.registerRow}>
+            <Text style={styles.registerText}>Ikke bruker? </Text>
+            <TouchableOpacity onPress={handleRegister}>
+              <Text style={styles.registerLink}>Registrer deg</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Logg inn knapp */}
-        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-          <Text style={styles.primaryButtonText}>Logg inn</Text>
-        </TouchableOpacity>
-
-        {/* Registrer deg tekst */}
-        <View style={styles.registerRow}>
-          <Text style={styles.registerText}>Ikke bruker? </Text>
-          <TouchableOpacity onPress={handleRegister}>
-            <Text style={styles.registerLink}>Registrer deg</Text>
-          </TouchableOpacity>
-        </View>
-      </View> {/* 👈 LUKKER content */}
-
-      {/* BUNN-FORM – enklest som dekor-view eller bilde */}
-      <View style={styles.bottomShape} />
-    </View>  {/* 👈 LUKKER container */}
-  </SafeAreaView>
-);
+        {/* 👈 LUKKER content */}
+        {/* BUNN-FORM – enklest som dekor-view eller bilde */}
+        <View style={styles.bottomShape} />
+      </View>
+      {/* 👈 LUKKER container */}
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -230,5 +243,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default login;
-
+export default LoginScreen;
