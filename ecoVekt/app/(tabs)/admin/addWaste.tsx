@@ -1,25 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
   ActivityIndicator,
-  StyleSheet,
   Dimensions,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from "react-native";
-import { useRouter } from "expo-router";
+// 🔑 Importér useFocusEffect
 import { auth, db } from "@/firebaseConfig";
+import { useFocusEffect, useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
-  getDocs,
   doc,
-  setDoc,
-  updateDoc,
   getDoc,
+  getDocs,
   serverTimestamp,
+  setDoc
 } from "firebase/firestore";
 
 type WasteType = {
@@ -29,6 +28,8 @@ type WasteType = {
   imageUrl?: string;
 };
 
+// ... (Resten av funksjonen, fetchWasteTypes, toggle, handleSave forblir de samme)
+
 export default function AddWasteScreen(): React.ReactElement {
   const router = useRouter();
 
@@ -36,23 +37,10 @@ export default function AddWasteScreen(): React.ReactElement {
   const [saving, setSaving] = useState(false);
   const [wasteTypes, setWasteTypes] = useState<WasteType[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [userUid, setUserUid] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        setUserUid(u.uid);
-        loadUserSelected(u.uid);
-      } else {
-        setUserUid(null);
-      }
-    });
-    fetchWasteTypes();
-    return () => unsub();
-    
-  }, []);
+  const [userUid, setUserUid] = useState<string | null>(auth.currentUser?.uid || null);
 
   const fetchWasteTypes = async () => {
+    // ... (Logikk for å hente alle avfallstyper fra "trash")
     setLoading(true);
     try {
       const colRef = collection(db, "trash"); 
@@ -92,6 +80,30 @@ export default function AddWasteScreen(): React.ReactElement {
       console.error("Feil ved henting av brukerens valgte avfall:", e);
     }
   };
+
+
+  // 1. Initialisering og Henting av Alle Avfallstyper (KUN VED MONTERING)
+  useEffect(() => {
+    // Henter kun auth state initialt, setter userUid. loadUserSelected flyttes.
+    const unsub = onAuthStateChanged(auth, (u) => {
+        setUserUid(u ? u.uid : null);
+    });
+    fetchWasteTypes();
+    return () => unsub();
+  }, []);
+
+  // 2. Henting av BRUKERENS VALGTE Avfallstyper (VED FOKUS)
+  // 🔑 NYTT: Bruk useFocusEffect for å hente brukerens valgte avfall hver gang siden er synlig
+  useFocusEffect(
+    useCallback(() => {
+      if (userUid) {
+        // Henter de valgte kategoriene HVER GANG skjermen er fokusert.
+        loadUserSelected(userUid); 
+      }
+      // cleanup funksjon for useFocusEffect er valgfritt her.
+      return () => {};
+    }, [userUid]) // Kjører også når userUid endres (dvs. ved innlogging)
+  );
 
   const toggle = (title: string) => {
     setSelected((prev) =>
@@ -140,7 +152,7 @@ export default function AddWasteScreen(): React.ReactElement {
       </View>
 
       <View style={styles.container}>
-        {loading ? (
+        {loading || !userUid ? ( // Legger til sjekk på userUid her
           <View style={styles.center}>
             <ActivityIndicator />
             <Text style={styles.hint}>Laster avfallstyper…</Text>
@@ -198,6 +210,7 @@ export default function AddWasteScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
+  // ... (Styles er uendret)
   screen: { flex: 1, backgroundColor: "#f8fafc" },
   header: {
     height: 64,
