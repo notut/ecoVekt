@@ -1,6 +1,4 @@
-// Registrer vekt-siden: bruker valgt avfallstype fra forrige skjerm
-// og lar brukeren kun fylle inn vekt.
-
+// skjermen som skal registrere vekt
 import React, { useState } from "react";
 import {
   View,
@@ -8,16 +6,16 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
+  Alert, // beholdes, nå brukt til feilmeldinger
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useLocalSearchParams, useRouter } from "expo-router";
-
-import { db, auth } from "../../firebaseConfig";
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress";
+import { auth, db } from "../../firebaseConfig";
 
+// Design - gjenbruk fra prosjektet
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
 const BG = "#F5F5F5";
@@ -30,62 +28,55 @@ type RouteParams = {
 export default function RegistrerVekt() {
   const router = useRouter();
   const { trashId, trashTitle } = useLocalSearchParams<RouteParams>();
-
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  const steps = [
-    { id: 1 },
-    { id: 2 },
-    { id: 3 },
-  ];
-
-  const handleSave = async () => {
+  // funksjon for lagring og fullføring
+  const handleFullfor = async () => {
     if (!trashTitle) {
-      Alert.alert("Feil", "Fant ikke valgt avfallstype. Gå tilbake og prøv igjen.");
+      Alert.alert("Feil", "Avfallstype mangler.");
       return;
     }
 
-    if (!weight) {
-      Alert.alert("Feil", "Du må fylle inn vekten.");
-      return;
-    }
-
+    // TYDELIG ENDRENEDE VALIDERINGER START
     const numericWeight = Number(weight);
-    if (Number.isNaN(numericWeight) || numericWeight <= 0) {
-      Alert.alert("Feil", "Vekten må være et tall større enn 0.");
+
+    //  feil meldnig ved urealistisk verdier
+    if (weight.trim() === "" || Number.isNaN(numericWeight) || numericWeight <= 0) {
+      Alert.alert("Ugyldig input", "Du må skrive inn et gyldig tall i kg (større enn 0).");
       return;
     }
+
+    if (numericWeight > 500) {
+      Alert.alert("Urealistisk verdi", "Maks tillatt vekt er 500 kg per registrering.");
+      return;
+    }
+    
+    const user = auth.currentUser;
 
     try {
       setSaving(true);
 
-      const user = auth.currentUser;
-
-      // 🔹 Lagre til Firestore
+      // lagrer avfall i Firestore og logger resultat i konsollen
       await addDoc(collection(db, "waste"), {
         wasteId: trashId ?? null,
         wasteTitle: trashTitle,
         amountKg: numericWeight,
         timestamp: serverTimestamp(),
-        userId: user ? user.uid : null,
+        userId: user?.uid ?? null,
       });
 
-      // 🔹 Lagre sist registrerte i AsyncStorage (valgfritt, men du hadde det fra før)
-      await AsyncStorage.setItem(
-        "lastWasteEntry",
-        JSON.stringify({
-          wasteTitle: trashTitle,
-          weight: numericWeight,
-          savedAt: new Date().toISOString(),
-        })
-      );
+      console.log(`Lagret ${trashTitle} : ${numericWeight} kg`);
 
-      // 🔹 Naviger til suksess-siden
-      router.push("/successfullyRegistered");
+      // tømmer local storage etter lagring
+      await AsyncStorage.removeItem("lastWasteEntry");
+
+      // Går til registrering vellykket skjermen
+      router.push("/(tabs)/successfullyRegistered");
     } catch (err) {
-      console.log("🔥 Firestore error:", err);
-      Alert.alert("Feil", "Kunne ikke lagre avfallet. Prøv igjen.");
+      console.error("Save error:", err);
+      Alert.alert("Lagring feilet", "Noe gikk galt under lagring, prøv igjen.");
     } finally {
       setSaving(false);
     }
@@ -93,31 +84,42 @@ export default function RegistrerVekt() {
 
   return (
     <View style={styles.root}>
-      {/* HEADER */}
+      {/* Header komponent som vises øverst i UI */}
       <Header
-        title="Fyll inn vekt"
+        title="Registrer vekt"
         onBackPress={() => router.back()}
-        // onProfilePress={...} kan kobles senere
+        onProfilePress={() => {}}
+        containerStyle={{
+          height: 80,
+          justifyContent: "flex-start",
+          overflow: "hidden",
+          paddingLeft: 10,
+        }}
+        titleStyle={{
+          fontSize: 20,
+          marginTop: 40,
+          textAlign: "left",
+          alignSelf: "flex-start",
+          color: "#FFFFFF",
+          fontWeight: "600",
+        }}
       />
 
       <View style={styles.container}>
-        {/* STEG 2 AV 3 */}
+        {/* steg prosessen */}
         <View style={styles.stepWrapper}>
           <StepProgress steps={steps} currentStep={2} />
         </View>
 
-        {/* INFO OM VALGT AVFALLSTYPE */}
+        {/* Informasjonen av valgt avfalstype */}
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Valgt avfallstype</Text>
-          <Text style={styles.infoTitle}>
-            {trashTitle ?? "Ukjent avfallstype"}
-          </Text>
+          <Text style={styles.infoTitle}>{trashTitle}</Text>
         </View>
 
-        {/* INPUT FOR VEKT */}
+        {/* Input for vekten */}
         <Text style={styles.label}>Vekt (kg)</Text>
         <View style={styles.weightRow}>
-          {/* minus-knapp */}
           <TouchableOpacity
             style={styles.adjustBtn}
             onPress={() =>
@@ -129,37 +131,32 @@ export default function RegistrerVekt() {
             <Text style={styles.adjustText}>–</Text>
           </TouchableOpacity>
 
-          {/* direkte input */}
           <TextInput
             style={styles.input}
             keyboardType="decimal-pad"
             placeholder="0.25"
-            placeholderTextColor="#999"
             value={weight}
             onChangeText={(val) => setWeight(val.replace(",", "."))}
           />
 
-          {/* pluss-knapp */}
           <TouchableOpacity
             style={styles.adjustBtn}
             onPress={() =>
-              setWeight((prev) =>
-                (Number(prev || "0") + 0.1).toFixed(2)
-              )
+              setWeight((prev) => (Number(prev || "0") + 0.1).toFixed(2))
             }
           >
             <Text style={styles.adjustText}>+</Text>
           </TouchableOpacity>
         </View>
 
-        {/* LAGRE-KNAPP */}
+        {/* Fullfør knapp */}
         <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
+          style={styles.fullforButton}
+          onPress={handleFullfor}
           disabled={saving}
         >
-          <Text style={styles.saveButtonText}>
-            {saving ? "Lagrer..." : "Lagre"}
+          <Text style={styles.fullforText}>
+            {saving ? "Lagrer..." : "Fullfør"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -181,33 +178,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  infoBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: "#6B7A75",
-    marginBottom: 4,
-  },
-  infoTitle: {
-    fontSize: 18,
-    color: TEXT_DARK,
-    fontWeight: "600",
-  },
-  label: {
-    fontSize: 16,
-    color: TEXT_DARK,
-    marginBottom: 8,
-  },
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -218,34 +188,60 @@ const styles = StyleSheet.create({
     height: 50,
     backgroundColor: PRIMARY,
     borderRadius: 12,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
   },
   adjustText: {
     color: "#FFF",
     fontSize: 30,
     fontWeight: "bold",
   },
+  infoBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: TEXT_DARK,
+    marginBottom: 4,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: TEXT_DARK,
+  },
+  label: {
+    fontSize: 16,
+    color: TEXT_DARK,
+    marginBottom: 8,
+  },
   input: {
     flex: 1,
+    height: 50,
+    backgroundColor: "#FFF",
     borderWidth: 2,
     borderColor: PRIMARY,
     borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
     marginHorizontal: 12,
+    paddingHorizontal: 12,
     fontSize: 18,
-    backgroundColor: "#FFF",
   },
-  saveButton: {
+
+  fullforButton: {
     backgroundColor: PRIMARY,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 10,
   },
-  saveButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
+  fullforText: {
+    fontSize: 20,
+    fontWeight: "700",
     color: "#FFF",
   },
 });
