@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -6,11 +7,12 @@ import {
   Text,
   View,
 } from "react-native";
-import { collection, getDocs } from "firebase/firestore";
-import { useRouter } from "expo-router";
-import { db } from "../../firebaseConfig";
-import WasteCard from "@/components/wasteCard";
+// 🔑 IMPORT: useFocusEffect må importeres fra "expo-router" (eller "@react-navigation/native")
 import { StepProgress } from "@/components/stepProgress";
+import WasteCard from "@/components/wasteCard";
+import { useFocusEffect, useRouter } from "expo-router";
+import { auth, db } from "../../firebaseConfig";
+
 
 type TrashType = {
   id: string;
@@ -36,37 +38,70 @@ export default function ChooseWaste() {
   { id: 3 },
 ];
 
-  useEffect(() => {
-    const fetchTrashTypes = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "trash"));
-        const types: TrashType[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as Record<string, any>;
-          types.push({
-            id: doc.id,
-            title: data.title,
-            description: data.description,
-            imageUrl: data.imageUrl || data.imageurl || undefined,
+  // 🔑 LØSNING: Bruk useFocusEffect i stedet for useEffect (med tom avhengighetsliste)
+  // Dette sikrer at data hentes hver gang skjermen blir synlig/fokusert
+  useFocusEffect(
+    useCallback(() => {
+      const fetchTrashTypes = async () => {
+        setLoading(true); // Viser lasteindikator
+        setError(null); // Nullstill feilmelding
+
+        try {
+          const user = auth.currentUser;
+          let allowedTitles: string[] | null = null;
+
+          // 1. Hent hvilke typer brukeren har valgt fra users/{uid}.selectedWaste
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+              const data = userSnap.data() as { selectedWaste?: string[] };
+              allowedTitles = data.selectedWaste ?? null;
+            }
+          }
+
+          // 2. Hent alle avfallstyper fra "trash"
+          const snapshot = await getDocs(collection(db, "trash"));
+          let types: TrashType[] = [];
+
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as any;
+            types.push({
+              id: docSnap.id,
+              title: data.title ?? data.name ?? String(docSnap.id),
+              description: data.description,
+              imageUrl: data.imageUrl || data.imageurl || undefined,
+            });
           });
-        });
 
-        types.sort((a, b) => Number(a.id) - Number(b.id));
-        setTrashTypes(types);
-      } catch (err) {
-        console.error("Error fetching trash types:", err);
-        setError("Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk.");
-      } finally {
-        setLoading(false);
-      }
-    };
+          // Sortér (samme som på SetupBusiness-siden)
+          types.sort((a, b) => a.title.localeCompare(b.title));
 
-    fetchTrashTypes();
-  }, []);
+          // 3. Hvis brukeren har valgt typer → filtrer på title
+          if (allowedTitles && allowedTitles.length > 0) {
+            types = types.filter((t) => allowedTitles!.includes(t.title));
+          }
+
+          setTrashTypes(types);
+        } catch (err) {
+          console.error("Error fetching trash types:", err);
+          setError("Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchTrashTypes();
+      
+      // Valgfri cleanup-funksjon (kjører når skjermen mister fokus)
+      return () => {};
+    }, [])
+  ); // Tomt dependency-array sikrer at useCallback-funksjonen lages bare én gang
 
   const handleSelect = (item: TrashType) => {
     router.push({
-      pathname: "/(tabs)/Registrer_vekt",
+      pathname: "/(tabs)/logWeight",
       params: {
         trashId: item.id,
         trashTitle: item.title,
