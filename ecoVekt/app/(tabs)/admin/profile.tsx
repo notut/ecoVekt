@@ -1,7 +1,16 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Pressable, FlatList, Dimensions } from "react-native";
-import { Link, useRouter } from "expo-router";
+import {
+  View,
+  Text,
+  Pressable,
+  FlatList,
+  Dimensions,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import {
   getFirestore,
@@ -12,10 +21,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-
-// Pie Chart
 import { PieChart } from "react-native-chart-kit";
-
 
 const auth = getAuth();
 const db = getFirestore();
@@ -28,224 +34,328 @@ type TrashItemType = {
 };
 
 export default function ProfilePage(): React.ReactElement {
+  const { signOut } = useAuthSession();
   const router = useRouter();
-
-  // Local auth state 
-  const [user, setUser] = useState<User | null>(auth.currentUser);
-  const [userNameSession, setUserNameSession] = useState<string | null>(
-    user ? user.displayName || user.email : null
-  );
 
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [tooltipText, setTooltipText] = useState<string>("");
+  const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
 
-  // Chart data state PieChart
-  const [chartData, setChartData] = useState<
-    {
-      name: string;
-      population: number;
-      color: string;
-      legendFontColor: string;
-      legendFontSize: number;
-    }[]
-  >([]);
-
-  // Lytt på auth state endringer
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setUserNameSession(u ? u.displayName || u.email : null);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Farger generator for pie chart
   const generateColors = (n: number) => {
     const colors: string[] = [];
     const hueStep = Math.floor(360 / Math.max(1, n));
     for (let i = 0; i < n; i++) {
       const hue = (i * hueStep) % 360;
-      colors.push(`hsl(${hue}deg 70% 55%)`);
+      colors.push(`hsl(${hue}deg 60% 45%)`);
     }
     return colors;
   };
 
-  //hent brukerens kastede elementer fra Firestore
-  const getMyTrash = async () => {
-    if (!user) {
-      setTrashItems([]);
-      setChartData([]);
-      return;
-    }
-
+  const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
       const yourTrashCol = collection(db, "yourTrash");
-
-      // Hent alle dokumenter hvor uid == innlogget bruker
-      const q = query(yourTrashCol, where("uid", "==", user.uid));
+      const q = uid ? query(yourTrashCol, where("uid", "==", uid)) : query(yourTrashCol);
       const snap = await getDocs(q);
 
       const results: TrashItemType[] = [];
       snap.forEach((docSnap) => {
-        const data = docSnap.data() as any;
+        const d = docSnap.data() as any;
         results.push({
           id: docSnap.id,
-          weight: Number(data.weight) || 0,
-          createdAt: data.createdAt ?? null,
-          type: typeof data.type === "string" ? data.type : undefined,
+          weight: d.weight || 0,
+          createdAt: d.createdAt ?? null,
+          type: d.type,
         });
       });
 
-      // Sett liste i state
       setTrashItems(results);
 
-      // Lag chart data hvis noen elementer har `type`
-      // Beregn totalsum per type
       const totals: Record<string, number> = {};
-      let anyType = false;
       results.forEach((r) => {
-        if (r.type) {
-          anyType = true;
-          totals[r.type] = (totals[r.type] || 0) + (r.weight || 0);
-        }
+        const t = r.type ?? "Ukjent";
+        totals[t] = (totals[t] || 0) + r.weight;
       });
 
-      if (anyType) {
-        const types = Object.keys(totals).filter((k) => totals[k] > 0);
+      const types = Object.keys(totals);
+      if (types.length) {
         const colors = generateColors(types.length);
-        const arr = types.map((t, idx) => ({
+        const arr = types.map((t, i) => ({
           name: t,
-          population: Number(totals[t]),
-          color: colors[idx],
+          population: totals[t],
+          color: colors[i],
           legendFontColor: "#ffffff",
           legendFontSize: 12,
         }));
         setChartData(arr);
+
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+        const total = totals[defaultPick] ?? 0;
+        setTooltipText(`Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`);
       } else {
-        // Hvis ingen type-data finnes, tøm chartData 
         setChartData([]);
+        setTooltipText("");
       }
-    } catch (err) {
-      console.error("Feil ved henting fra yourTrash:", err);
-      setTrashItems([]);
-      setChartData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Kjører når screen får fokus og når user endres
-  useFocusEffect(
-    useCallback(() => {
-      getMyTrash();
-    }, [user?.uid])
-  );
+  const fetchSelectedWaste = async () => {
+    if (!currentUser) return setSelectedWaste([]);
 
-  // Render-funksjon for hvert element,  viser id, weight og dato
-  const renderTrashItem = ({ item }: { item: TrashItemType }) => {
-  
-    const shortId = item.id ? item.id.slice(0, 8) : item.id;
-    return (
-      <View className="bg-white/5 p-4 rounded-xl">
-        <Text className="text-white font-semibold">ID: {shortId}</Text>
-        <Text className="text-gray-300 mt-1">Vekt: {item.weight} kg</Text>
-        {item.createdAt ? (
-          <Text className="text-gray-400 text-xs mt-1">
-            Dato:{" "}
-            {typeof item.createdAt.toDate === "function"
-              ? item.createdAt.toDate().toLocaleString()
-              : String(item.createdAt)}
-          </Text>
-        ) : null}
-        {item.type ? (
-          <Text className="text-gray-300 text-sm mt-1">Type: {item.type}</Text>
-        ) : null}
-      </View>
-    );
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      const arr = userSnap.data().selectedWaste || [];
+      setSelectedWaste(arr);
+    }
   };
 
-  const ItemSeparator = () => <View style={{ height: 8 }} />;
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setCurrentUser(u);
+      getAllData(u ? u.uid : null);
+    });
+    return () => unsub();
+  }, []);
 
-  // Chart dimensions
-  const screenWidth = Dimensions.get("window").width - 48; // padding px-6 begge sider
+  useFocusEffect(
+    useCallback(() => {
+      fetchSelectedWaste();
+      getAllData(currentUser?.uid ?? null);
+    }, [currentUser?.uid])
+  );
+
+  const screenWidth = Dimensions.get("window").width - 48;
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace("/brukerregistrering/autentication");
+  };
 
   return (
-    <View className="flex-1 bg-slate-700 px-6 py-4">
-      <Text className="text-white text-2xl font-semibold mb-4">
-        Hei {userNameSession ?? "gjest"}!
-      </Text>
+    <View style={styles.container}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Administrator</Text>
+      </View>
 
-      // henter pie-chart for vektfordeling per type
-      <View style={{ marginBottom: 16 }}>
-        <Text className="text-white text-lg font-semibold mb-2">
-          Vektfordeling per type
-        </Text>
+      {/* PROFILE BOX */}
+      <View style={styles.box}>
+        <Text style={styles.boxTitle}>Profil</Text>
+        <View style={styles.infoBox}>
+          <Text style={styles.label}>Bedrift:</Text>
+          <Text style={styles.label}>Ansattnummer:</Text>
+          <Text style={styles.label}>Email:</Text>
+        </View>
+      </View>
 
+      {/* SELECTED WASTE */}
+      <Text style={styles.sectionTitle}>Valgt avfall</Text>
+
+      <View style={styles.chipContainer}>
+        {selectedWaste.map((t) => (
+          <View key={t} style={styles.chip}>
+            <Text style={styles.chipText}>{t}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+        <Text style={styles.linkText}>Legg til mer</Text>
+      </Pressable>
+
+      {/* CHART */}
+      <Text style={styles.sectionTitle}>Total mengde avfall</Text>
+      <Text style={styles.subText}>Siste 4 uker</Text>
+
+      <View style={{ alignItems: "center", marginBottom: 20 }}>
         {loading ? (
-          <Text className="text-gray-300">Laster diagram...</Text>
-        ) : chartData.length > 0 ? (
-          <PieChart
-            data={chartData}
-            width={screenWidth}
-            height={220}
-            accessor={"population"}
-            backgroundColor={"transparent"}
-            paddingLeft={"15"}
-            absolute={false}
-            chartConfig={{
-              color: (opacity = 1) => `rgba(255,255,255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255,255,255, ${opacity})`,
-            }}
-            hasLegend={true}
-          />
+          <ActivityIndicator color="#6B8F71" />
+        ) : chartData.length ? (
+          <View style={{ width: screenWidth, alignItems: "center" }}>
+            <PieChart
+              data={chartData}
+              width={screenWidth - 30}
+              height={230}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft={"20"}
+              hasLegend={false}
+              absolute={false}
+              chartConfig={{
+                color: () => `#000`,
+                labelColor: () => `#000`,
+              }}
+            />
+
+            <View style={styles.tooltip}>
+              <Text style={styles.tooltipText}>{tooltipText}</Text>
+            </View>
+          </View>
         ) : (
-          <Text className="text-gray-300">
-            {trashItems.length === 0
-              ? loading
-                ? "Laster..."
-                : "Ingen innleveringer funnet."
-              : "Ingen type-data tilgjengelig for pie-chart."}
-          </Text>
+          <Text style={styles.noData}>Ingen data for diagram</Text>
         )}
       </View>
 
-        // liste over innleveringer
-        
-      <Text className="text-white text-lg font-semibold mb-2">Dine innleveringer</Text>
-
+      {/* LIST */}
       <FlatList
         data={trashItems}
-        renderItem={renderTrashItem}
-        keyExtractor={(item) => item.id}
-        ItemSeparatorComponent={ItemSeparator}
-        ListEmptyComponent={() => (
-          <Text className="text-gray-300 text-center mt-4">
-            {loading ? "Laster..." : "Du har ingen innleveringer."}
-          </Text>
+        keyExtractor={(i) => i.id}
+        renderItem={({ item }) => (
+          <View style={styles.listCard}>
+            <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
+            <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
+            {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
+          </View>
         )}
-        contentContainerStyle={trashItems.length === 0 ? { flex: 1 } : undefined}
       />
 
-      // logg ut
-      {user ? (
-        <Pressable
-          onPress={async () => {
-            await auth.signOut();
-        
-            router.replace("/logIn");
-          }}
-          className="bg-red-500 px-6 py-3 rounded-xl shadow-md mt-4"
-        >
-          <Text className="text-white text-lg font-semibold">Logg ut</Text>
-        </Pressable>
-      ) : (
-        <Link href="/logIn" asChild>
-          <Pressable className="bg-blue-600 px-6 py-3 rounded-xl shadow-md mt-4">
-            <Text className="text-white text-lg font-semibold">Logg inn</Text>
-          </Pressable>
-        </Link>
-      )}
+      {/* LOGOUT */}
+      <Pressable onPress={handleLogout} style={styles.logoutButton}>
+        <Text style={styles.logoutText}>Logg ut</Text>
+      </Pressable>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F6F5",
+    paddingHorizontal: 14,
+  },
+
+  header: {
+    backgroundColor: "#7EA08F",
+    paddingVertical: 22,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 12,
+    marginBottom: 18,
+  },
+  headerTitle: {
+    color: "#2F3E36",
+    fontSize: 22,
+    fontWeight: "700",
+  },
+
+  box: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#DDE7E2",
+    marginBottom: 20,
+  },
+  boxTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2F3E36",
+    marginBottom: 12,
+  },
+  infoBox: {
+    borderWidth: 1,
+    borderColor: "#DDE7E2",
+    padding: 12,
+    borderRadius: 10,
+  },
+  label: {
+    color: "#4A5C54",
+    paddingVertical: 4,
+  },
+
+  sectionTitle: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#2F3E36",
+    marginBottom: 10,
+  },
+  subText: {
+    color: "#6B7A75",
+    marginBottom: 16,
+  },
+
+  chipContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  chip: {
+    borderWidth: 1,
+    borderColor: "#5E7C6B",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 22,
+  },
+  chipText: {
+    color: "#2F3E36",
+  },
+
+  linkButton: {
+    marginBottom: 26,
+  },
+  linkText: {
+    color: "#5E7C6B",
+    textDecorationLine: "underline",
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
+  tooltip: {
+    backgroundColor: "white",
+    padding: 14,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    marginTop: -50,
+  },
+  tooltipText: {
+    color: "#2F3E36",
+    textAlign: "center",
+    fontSize: 14,
+    width: 230,
+  },
+
+  noData: {
+    color: "#6B7A75",
+  },
+
+  listCard: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    borderColor: "#E5ECE9",
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  listTitle: {
+    fontWeight: "600",
+    color: "#2F3E36",
+  },
+  listText: {
+    marginTop: 6,
+    color: "#4A5C54",
+  },
+
+  logoutButton: {
+    backgroundColor: "#6B8F71",
+    paddingVertical: 14,
+    marginTop: 20,
+    borderRadius: 50,
+    marginBottom: 40,
+  },
+  logoutText: {
+    textAlign: "center",
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});

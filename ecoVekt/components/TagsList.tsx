@@ -2,25 +2,29 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 interface TrashType {
-  id: string;
-  title: string;
+  id: string; // The Firebase Document ID (not used for selection state anymore)
+  title: string; // The human-readable waste name (used for selection state)
 }
 
 interface TagsListProps {
   items: TrashType[];
+  // selectedItems now holds titles (strings like "Trevirke"), not IDs
   selectedItems: string[];
-  onToggle: (id: string) => void;
+  // onToggle now expects a TITLE (string), not an ID
+  onToggle: (title: string) => void; 
 }
 
 export default function TagsList({ items, selectedItems, onToggle }: TagsListProps) {
   return (
     <ScrollView contentContainerStyle={styles.tagsContainer}>
       {items.map((item) => {
-        const isSelected = selectedItems.includes(item.id);
+        // 🔑 CHANGE 1: Check if the item's title is present in the selectedItems array
+        const isSelected = selectedItems.includes(item.title);
         return (
           <Pressable
             key={item.id}
-            onPress={() => onToggle(item.id)}
+            // 🔑 CHANGE 2: Pass the item's TITLE to the toggle function
+            onPress={() => onToggle(item.title)}
             style={[styles.tag, isSelected && styles.tagSelected]}
           >
             <Text style={[styles.tagText, isSelected && styles.tagTextSelected]}>
@@ -43,21 +47,21 @@ const styles = StyleSheet.create({
   tag: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#F8F7F5",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#D1D1D6",
+    borderColor: "#507C6D",
   },
   tagSelected: {
     backgroundColor: "#507C6D",
-    borderColor: "#507C6D",
   },
   tagText: {
     fontSize: 15,
-    color: "#333",
+    color: "#525252",
+    fontFamily: "Poppins_400regular",
   },
   tagTextSelected: {
     color: "#fff",
-    fontWeight: "600",
+    fontFamily: "Poppins_400regular",
   },
 });
