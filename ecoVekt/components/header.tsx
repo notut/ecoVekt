@@ -11,7 +11,7 @@ type HeaderProps  = {
     titleStyle?: TextStyle;
 };
 
-const HEADER_BG = "#678E78";
+const HEADER_BG = "#5F9D84";
 
 export const Header: React.FC<HeaderProps> = ({
     title, 
