@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   buttonText: {
-    color: "#ffff",
+    color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "Poppins_500Medium",
   },
