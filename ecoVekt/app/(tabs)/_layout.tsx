@@ -1,6 +1,6 @@
 import { Tabs, router, useSegments } from "expo-router";
 import React, { useEffect } from "react";
-import AuthContextProviderm, {useAuthSession} from "@/providers/authctx";
+import AuthContextProviderm, { useAuthSession } from "@/providers/authctx";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
@@ -12,8 +12,8 @@ function TabLayout() {
   const segments = useSegments() as string[];
 
   useEffect(() => {
-    if (isLoading) return; 
-    const inProtected = segments[0] ==="(protected)";
+    if (isLoading) return;
+    const inProtected = segments[0] === "(protected)";
 
     if (!userNameSession && inProtected) {
       router.replace("/brukerregistrering/autentication");
@@ -35,7 +35,6 @@ function TabLayout() {
         tabBarButton: HapticTab,
       }}
     >
-     
       <Tabs.Screen
         name="index"
         options={{
@@ -68,11 +67,11 @@ function TabLayout() {
 }
 
 export default function RootLayout() {
-  return(
+  return (
     <SafeAreaProvider>
       <AuthContextProviderm>
-        <TabLayout/>
+        <TabLayout />
       </AuthContextProviderm>
     </SafeAreaProvider>
-  )
+  );
 }
