@@ -1,24 +1,30 @@
-import { auth, db } from "@/firebaseConfig";
-import { useAuthSession } from "@/providers/authctx";
-import * as WebBrowser from "expo-web-browser";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
-  Alert,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
   View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
 } from "react-native";
-import LoginScreen from "./login";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { auth } from "@/firebaseConfig";
+import { useAuthSession } from "@/providers/authctx";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useLocalSearchParams } from "expo-router";
+import LoginScreen from "./login";
+
+// Farger tatt fra designet
+const main_green = "#5F9D84";
+const light_green = "#7EAC99";
+const text_box_color = "#F8F7F5";
+const text_color = "#525252";
 
 export default function AuthenticationScreen() {
   const { signIn } = useAuthSession();
-
   const params = useLocalSearchParams();
   const startInSignUp = params.signup === "true";
 
@@ -26,33 +32,39 @@ export default function AuthenticationScreen() {
 
   const [userEmail, setUserEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
 
   const registerNewUser = async () => {
     const email = userEmail.trim();
-    if (!email || !password) {
-      alert("Skriv inn e-post og passord.");
+    if (!email || !password || !repeatPassword) {
+      Alert.alert("Feil", "Fyll inn alle feltene.");
       return;
     }
+    if (password !== repeatPassword) {
+      Alert.alert("Feil", "Passordene er ikke like.");
+      return;
+    }
+
     try {
-      const userCred = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      await createUserWithEmailAndPassword(auth, email, password);
+      Alert.alert("Bruker opprettet", "Brukeren ble registrert.");
+      setIsSignUp(false);
     } catch (e: any) {
       console.log("Registrering feilet:", e?.code ?? e);
       switch (e?.code) {
         case "auth/email-already-in-use":
-          alert("E-post er allerede i bruk");
+          Alert.alert("Feil", "E-post er allerede i bruk.");
           break;
         case "auth/invalid-email":
-          alert("Ugyldig e-postadresse");
+          Alert.alert("Feil", "Ugyldig e-postadresse.");
           break;
         case "auth/weak-password":
-          alert("Passordet er for svakt.");
+          Alert.alert("Feil", "Passordet er for svakt.");
           break;
         default:
-          alert("Registrering feilet. Kontakt kundeservice.");
+          Alert.alert("Feil", "Registrering feilet. Kontakt kundeservice.");
       }
     }
   };
@@ -60,100 +72,255 @@ export default function AuthenticationScreen() {
   const signInWithUser = async () => {
     const email = userEmail.trim();
     if (!email || !password) {
-      alert("Skriv inn korrekt e-post og passord");
+      Alert.alert("Feil", "Skriv inn korrekt e-post og passord");
       return;
     }
     await signIn(email, password);
   };
 
+  // Når vi ikke er i signup-modus brukes LoginScreen 
   if (!isSignUp) {
     return <LoginScreen />;
   }
 
+  // SIGNUP-VISNING MED SAMME STIL SOM LOGIN
   return (
-    <View style={styles.screen}>
-      <View style={styles.mainContainer}>
-        <View style={styles.textFieldContainer}>
-          <Text>E-post</Text>
-          <TextInput
-            value={userEmail}
-            onChangeText={setUserEmail}
-            style={styles.textField}
-            placeholder="E-post"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+    <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+      <View style={styles.container}>
+        {/* TOPP-BLAD */}
+        <Image
+          source={require("../../assets/images/green_leaf.png")}
+          style={styles.topLeaf}
+        />
 
-        <View style={styles.textFieldContainer}>
-          <Text>Passord</Text>
-          <TextInput
-            value={password}
-            secureTextEntry
-            onChangeText={setPassword}
-            style={styles.textField}
-            placeholder="Passord"
-          />
-        </View>
-        <Pressable
-          style={{ paddingTop: 24 }}
-          onPress={() => setIsSignUp((v) => !v)}
-          hitSlop={8}
+        {/* LOGO */}
+        <Image
+          source={require("../../assets/images/ecovekt_logo.png")}
+          style={styles.logo}
+        />
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ textDecorationLine: "underline" }}>
-            {isSignUp ? "Innlogging" : "Registrer ny bruker"}
-          </Text>
-        </Pressable>
-        <View style={styles.buttonContainer}>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={isSignUp ? registerNewUser : signInWithUser}
-          >
-            <Text style={{ color: "white" }}>
-              {isSignUp ? "Lag bruker" : "Logg inn"}
-            </Text>
-          </Pressable>
-        </View>
+          {/* INNHOLD */}
+          <View style={styles.content}>
+            {/* Epost */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                value={userEmail}
+                onChangeText={setUserEmail}
+                placeholder="Epost"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Passord */}
+            <View style={styles.inputContainer}>
+              <View style={styles.passwordRow}>
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Passord"
+                  secureTextEntry={!showPassword}
+                  style={[styles.input, styles.passwordInput]}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Feather
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={22}
+                    color={"#989797ff"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Gjenta passord */}
+            <View style={styles.inputContainer}>
+              <View style={styles.passwordRow}>
+                <TextInput
+                  value={repeatPassword}
+                  onChangeText={setRepeatPassword}
+                  placeholder="Gjenta passord"
+                  secureTextEntry={!showRepeatPassword}
+                  style={[styles.input, styles.passwordInput]}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowRepeatPassword(!showRepeatPassword)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Feather
+                    name={showRepeatPassword ? "eye-off" : "eye"}
+                    size={22}
+                    color={"#989797ff"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Registrer-knapp */}
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={registerNewUser}
+            >
+              <Text style={styles.primaryButtonText}>Registrer</Text>
+            </TouchableOpacity>
+
+            {/* Allerede bruker? Logg inn */}
+            <View style={styles.registerRow}>
+              <Text style={styles.registerText}>Allerede bruker? </Text>
+              <TouchableOpacity onPress={() => setIsSignUp(false)}>
+                <Text style={styles.registerLink}>Logg inn</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* NEDERSTE BLADER */}
+        <Image
+          source={require("../../assets/images/bottom_dark_leaf.png")}
+          style={styles.bottomDark}
+        />
+        <Image
+          source={require("../../assets/images/bottom_light_leaf.png")}
+          style={styles.bottomLight}
+        />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  safe: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    position: "relative",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+
+  /* TOPP BLAD */
+  topLeaf: {
+    position: "absolute",
+    transform: [{ rotate: "5deg" }],
+    width: 400,
+    height: 320,
+    top: -110,
+    left: -40,
+    resizeMode: "contain",
+  },
+
+  /* LOGO */
+  logo: {
+    position: "absolute",
+    width: 190.51,
+    height: 190.51,
+    top: -10,
+    left: 98,
+    resizeMode: "contain",
+  },
+
+  /* INNHOLD */
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 210,
+    paddingBottom: 120,
+  },
+
+  inputContainer: {
+    marginBottom: 20,
+  },
+  input: {
+    backgroundColor: text_box_color,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: main_green,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: text_color,
+  },
+
+  /* Passordfelt */
+  passwordRow: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 46,
+  },
+
+  /* Øyeikon */
+  eyeButton: {
+    position: "absolute",
+    right: 18,
+    top: "50%",
+    marginTop: -11,
     justifyContent: "center",
     alignItems: "center",
   },
-  mainContainer: {
-    flex: 3,
-    justifyContent: "center",
+
+  primaryButton: {
+    marginTop: 20,
+    backgroundColor: main_green,
+    borderRadius: 12,
+    paddingVertical: 17,
     alignItems: "center",
-    paddingHorizontal: 20,
-    width: "100%",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
   },
-  buttonContainer: {
-    width: "100%",
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  registerRow: {
     flexDirection: "row",
     justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingTop: 32,
+    marginVertical: 20,
   },
-  primaryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 4,
-    backgroundColor: "#0096C7",
+  registerText: {
+    color: text_color,
   },
-  textFieldContainer: {
-    width: "100%",
-    paddingTop: 16,
+  registerLink: {
+    color: main_green,
+    fontWeight: "600",
   },
-  textField: {
-    borderWidth: 1,
-    padding: 10,
-    marginTop: 2,
-    borderColor: "grey",
-    borderRadius: 5,
+
+  /* NEDRE BLADER */
+  bottomLight: {
+    position: "absolute",
+    width: 190.43,
+    height: 299.38,
+    bottom: -50,
+    right: -40,
+    resizeMode: "contain",
+    zIndex: 2,
+  },
+  bottomDark: {
+    position: "absolute",
+    width: 310,
+    height: 209.28,
+    bottom: -40,
+    right: -40,
+    resizeMode: "contain",
+    zIndex: 1,
   },
 });
