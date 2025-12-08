@@ -4,19 +4,9 @@ import { useRouter } from "expo-router";
 import { Header } from "@/components/header";
 import TopLeaf from "@/components/top_leaf";
 import BottomLeaves from "@/components/Bottom_leaves";
-
-//DESIGN - gjenbruk av farger fra prosjektet
-const PRIMARY = "#6C8C76";
-const TEXT_DARK = "#486258";
-const BG = "#FFFFFF";
+import { colors } from "@/components/colors"; 
 
 
-//farge
-const TEXT_DARK = "#507C6D";
-const BG = "#FFFFFF";
-
-
-//  Props-type for gjenbruk
 type SuccessMessageProps = {
   redirectTo: string;
   title?: string;
@@ -32,7 +22,7 @@ export default function SuccessMessage({
 }: SuccessMessageProps) {
   const router = useRouter();
 
-  //  Auto-redirect etter 3 sek
+  // Auto-redirect etter 3 sek
   useEffect(() => {
     const timer = setTimeout(() => {
       router.replace("/chooseWaste" as any);
@@ -41,38 +31,32 @@ export default function SuccessMessage({
     return () => clearTimeout(timer);
   }, [router]);
 
- 
- return (
+  return (
+
+    //hente bottom leaves komponent, setter overskrift, ikon og underoverskriften.
     <View style={styles.root}>
-       {/* øverste bleder */}
-    <TopLeaf />
+      <TopLeaf />
+      <BottomLeaves />
 
-    {/* nederste balder */}
-    <BottomLeaves />
-    
       <View style={styles.content}>
-
-        {/*overskriften */}
         <Text style={styles.header}>Registrering vellykket!</Text>
 
-        {/* sjekk bilde SOM ASSET */}
         <Image
-          source={require("../../assets/images/success-icon-19.png")} 
+          source={require("../../assets/images/success-icon-19.png")}
           style={styles.successIcon}
         />
-          {/* Underskriften  */}
-        <Text style={styles.text}>Takk for at du tar vare på miljøet.</Text>
 
+        <Text style={styles.text}>Takk for at du tar vare på miljøet.</Text>
       </View>
     </View>
   );
 }
 
-// STYLING
+// styling på siden ved bruk av farger fra komponenter
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: colors.background, 
   },
   content: {
     flex: 1,
@@ -83,17 +67,15 @@ const styles = StyleSheet.create({
     width: 70,
     height: 130,
     resizeMode: "contain",
-
   },
   header: {
-   fontSize: 20,
-    color: TEXT_DARK,
+    fontSize: 20,
+    color: colors.darkGreen, 
     textAlign: "center",
-   
-    },
+  },
   text: {
     fontSize: 16,
-    color: TEXT_DARK,
+    color: colors.text, 
     textAlign: "center",
   },
 });
