@@ -12,11 +12,12 @@ import { colors } from "@/components/colors"; // henter fargene herfra
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
+  imageUrl?: string;
 };
 
 export default function RegistrerVekt() {
   const router = useRouter();
-  const { trashId, trashTitle } = useLocalSearchParams<RouteParams>();
+  const { trashId, trashTitle, imageUrl } = useLocalSearchParams<RouteParams>();
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
@@ -48,6 +49,7 @@ export default function RegistrerVekt() {
       amountKg: numericWeight,
       userId: user?.uid ?? null,
       savedAt: new Date().toISOString(),
+      imageUrl: imageUrl ?? null,
     };
 
     try {
@@ -113,7 +115,7 @@ export default function RegistrerVekt() {
               )
             }
           >
-            <Text style={styles.adjustText}></Text>
+            <Text style={styles.adjustText}>-</Text>
           </TouchableOpacity>
 
           <TextInput
