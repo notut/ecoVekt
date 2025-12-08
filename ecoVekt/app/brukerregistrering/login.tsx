@@ -12,11 +12,11 @@ import { useAuthSession } from "@/providers/authctx";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
-//Farger tatt fra designet
-const main_green = "#5F9D84";
-const light_green = "#7EAC99";
-const text_box_color = "#F8F7F5";
-const text_color = "#525252";
+//Komponenter
+import { BottomLeaves } from "@/components/Bottom_leaves";
+import { TopLeaf } from "@/components/top_leaf";
+import { colors } from "@/components/colors";
+
 
 export const LoginScreen: React.FC = () => {
   const { signIn, isLoading } = useAuthSession();
@@ -44,10 +44,7 @@ export const LoginScreen: React.FC = () => {
     >
       <View style={styles.container}>
         {/* TOPP-BLAD */}
-        <Image
-          source={require("../../assets/images/green_leaf.png")}
-          style={styles.topLeaf}
-        />
+        <TopLeaf />
 
         {/* LOGO */}
         <Image
@@ -113,14 +110,7 @@ export const LoginScreen: React.FC = () => {
         </View>
 
         {/* NEDERSTE BLADER */}
-        <Image
-          source={require("../../assets/images/bottom_dark_leaf.png")}
-          style={styles.bottomDark}
-        />
-        <Image
-          source={require("../../assets/images/bottom_light_leaf.png")}
-          style={styles.bottomLight}
-        />
+        <BottomLeaves />
       </View>
     </SafeAreaView>
   );
@@ -129,23 +119,12 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     position: "relative",
-  },
-
-  /* TOPP BLAD */
-  topLeaf: {
-    position: "absolute",
-    transform: [{ rotate: "5deg" }],
-    width: 400,
-    height: 320,
-    top: -110,
-    left: -40,
-    resizeMode: "contain",
   },
 
   /* LOGO */
@@ -171,18 +150,18 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    color: text_color,
+    color: colors.text,
     marginBottom: 4,
   },
   input: {
-    backgroundColor: text_box_color,
+    backgroundColor: colors.textBox,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: main_green,
+    borderColor: colors.mainGreen,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 16,
-    color: text_color,
+    color: colors.text,
   },
 
   /* Passordfelt */
@@ -206,7 +185,7 @@ const styles = StyleSheet.create({
 
   primaryButton: {
     marginTop: 20,
-    backgroundColor: main_green,
+    backgroundColor: colors.mainGreen,
     borderRadius: 12,
     paddingVertical: 17,
     alignItems: "center",
@@ -228,32 +207,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   registerText: {
-    color: text_color,
+    color: colors.text,
   },
   registerLink: {
-    color: main_green,
+    color: colors.mainGreen,
     fontWeight: "600",
-  },
-
-  /* NEDRE BLADER */
-  bottomLight: {
-    position: "absolute",
-    width: 190.43,
-    height: 299.38,
-    bottom: -50,
-    right: -40,
-    resizeMode: "contain",
-    zIndex: 2,
-  },
-  bottomDark: {
-    position: "absolute",
-    width: 310,
-    height: 209.28,
-    bottom: -40,
-    right: -40,
-    resizeMode: "contain",
-    zIndex: 1,
-  },
+  }
 });
 
 export default LoginScreen;
