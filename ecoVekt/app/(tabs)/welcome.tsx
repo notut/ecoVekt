@@ -1,7 +1,17 @@
-import { Poppins_400Regular, Poppins_700Bold, useFonts } from '@expo-google-fonts/poppins';
+import {
+  Poppins_400Regular,
+  Poppins_700Bold,
+  useFonts,
+} from "@expo-google-fonts/poppins";
 import { useRouter } from "expo-router";
 import React from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Welcome() {
   const router = useRouter();
@@ -15,7 +25,7 @@ export default function Welcome() {
   // Font Loading
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#507C6D" />
       </View>
     );
@@ -29,11 +39,13 @@ export default function Welcome() {
     <View style={styles.container}>
       <View style={styles.textWrapper}>
         <Text style={styles.titleText}>Velkommen til ecoVekt!</Text>
-        <Text style={styles.subtitleText}>En app for å enkelt registrere avfall</Text>
+        <Text style={styles.subtitleText}>
+          En app for å enkelt registrere avfall
+        </Text>
       </View>
 
       <TouchableOpacity onPress={goToSetup} style={styles.bottomLink}>
-        <Text style={styles.linkText}>Sett opp din bedrift</Text>
+        <Text style={styles.linkText}>Sett opp for din bedrift</Text>
       </TouchableOpacity>
     </View>
   );
@@ -73,4 +85,4 @@ const styles = StyleSheet.create({
     textDecorationLine: "none",
     fontFamily: "Poppins_400Regular",
   },
-}); 
+});
