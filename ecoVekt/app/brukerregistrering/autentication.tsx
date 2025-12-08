@@ -10,17 +10,18 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+
 import { auth } from "@/firebaseConfig";
 import { useAuthSession } from "@/providers/authctx";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useLocalSearchParams } from "expo-router";
 import LoginScreen from "./login";
 
-//Komponenter
+// Komponenter
 import { BottomLeaves } from "@/components/Bottom_leaves";
 import { TopLeaf } from "@/components/top_leaf";
 import { colors } from "@/components/colors";
+import { PasswordInput } from "@/components/passwordInput";
 
 export default function AuthenticationScreen() {
   const { signIn } = useAuthSession();
@@ -32,8 +33,7 @@ export default function AuthenticationScreen() {
   const [userEmail, setUserEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const registerNewUser = async () => {
     const email = userEmail.trim();
@@ -42,6 +42,7 @@ export default function AuthenticationScreen() {
       return;
     }
     if (password !== repeatPassword) {
+      setPasswordError("Passordene er ikke like.");
       Alert.alert("Feil", "Passordene er ikke like.");
       return;
     }
@@ -50,6 +51,7 @@ export default function AuthenticationScreen() {
       await createUserWithEmailAndPassword(auth, email, password);
       Alert.alert("Bruker opprettet", "Brukeren ble registrert.");
       setIsSignUp(false);
+      setPasswordError(null);
     } catch (e: any) {
       console.log("Registrering feilet:", e?.code ?? e);
       switch (e?.code) {
@@ -73,7 +75,7 @@ export default function AuthenticationScreen() {
     return <LoginScreen />;
   }
 
-  // SIGNUP-VISNING MED SAMME STIL SOM LOGIN
+  // SIGNUP-VISNING
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <View style={styles.container}>
@@ -106,50 +108,37 @@ export default function AuthenticationScreen() {
 
             {/* Passord */}
             <View style={styles.inputContainer}>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Passord"
-                  secureTextEntry={!showPassword}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Feather
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={22}
-                    color={"#989797ff"}
-                  />
-                </TouchableOpacity>
-              </View>
+              <PasswordInput
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (repeatPassword && text !== repeatPassword) {
+                    setPasswordError("Passordene er ikke like.");
+                  } else {
+                    setPasswordError(null);
+                  }
+                }}
+                placeholder="Passord"
+              />
             </View>
 
             {/* Gjenta passord */}
             <View style={styles.inputContainer}>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  value={repeatPassword}
-                  onChangeText={setRepeatPassword}
-                  placeholder="Gjenta passord"
-                  secureTextEntry={!showRepeatPassword}
-                  style={[styles.input, styles.passwordInput]}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowRepeatPassword(!showRepeatPassword)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Feather
-                    name={showRepeatPassword ? "eye-off" : "eye"}
-                    size={22}
-                    color={"#989797ff"}
-                  />
-                </TouchableOpacity>
-              </View>
+              <PasswordInput
+                value={repeatPassword}
+                onChangeText={(text) => {
+                  setRepeatPassword(text);
+                  if (password && text !== password) {
+                    setPasswordError("Passordene er ikke like.");
+                  } else {
+                    setPasswordError(null);
+                  }
+                }}
+                placeholder="Gjenta passord"
+              />
+              {passwordError && (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              )}
             </View>
 
             {/* Registrer-knapp */}
@@ -180,11 +169,11 @@ export default function AuthenticationScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     position: "relative",
   },
   scrollContent: {
@@ -223,25 +212,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  /* Passordfelt */
-  passwordRow: {
-    position: "relative",
-    justifyContent: "center",
-  },
-  passwordInput: {
-    paddingRight: 46,
-  },
-
-  /* Øyeikon */
-  eyeButton: {
-    position: "absolute",
-    right: 18,
-    top: "50%",
-    marginTop: -11,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
   primaryButton: {
     marginTop: 20,
     backgroundColor: colors.mainGreen,
@@ -271,5 +241,11 @@ const styles = StyleSheet.create({
   registerLink: {
     color: colors.mainGreen,
     fontWeight: "600",
-  }
+  },
+
+  errorText: {
+    color: "#D32F2F",
+    marginTop: 6,
+    fontSize: 13,
+  },
 });

@@ -1,3 +1,4 @@
+
 // skjermen som skal registrere vekt
 import React, { useState } from "react";
 import {
@@ -6,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert, // beholdes, nå brukt til feilmeldinger
+
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -16,9 +17,7 @@ import { StepProgress } from "@/components/stepProgress";
 import { auth, db } from "../../firebaseConfig";
 
 // Design - gjenbruk fra prosjektet
-const PRIMARY = "#5F9D84";
-const TEXT_DARK = "#486258";
-const BG = "#FFFFFF";
+
 
 type RouteParams = {
   trashId?: string;
@@ -36,6 +35,7 @@ export default function RegistrerVekt() {
 
   // funksjon for lagring og fullføring
   const handleFullfor = async () => {
+
   if (!trashTitle) {
     Alert.alert("Feil", "Avfallstype mangler.");
     return;
@@ -86,6 +86,55 @@ export default function RegistrerVekt() {
     setSaving(false);
   }
 };
+
+    if (!trashTitle) {
+      Alert.alert("Feil", "Avfallstype mangler.");
+      return;
+    }
+
+    // TYDELIG ENDRENEDE VALIDERINGER START
+    const numericWeight = Number(weight);
+
+    //  feil meldnig ved urealistisk verdier
+    if (weight.trim() === "" || Number.isNaN(numericWeight) || numericWeight <= 0) {
+      Alert.alert("Ugyldig input", "Du må skrive inn et gyldig tall i kg (større enn 0).");
+      return;
+    }
+
+    if (numericWeight > 500) {
+      Alert.alert("Urealistisk verdi", "Maks tillatt vekt er 500 kg per registrering.");
+      return;
+    }
+    
+    const user = auth.currentUser;
+
+    try {
+      setSaving(true);
+
+      // lagrer avfall i Firestore og logger resultat i konsollen
+      await addDoc(collection(db, "waste"), {
+        wasteId: trashId ?? null,
+        wasteTitle: trashTitle,
+        amountKg: numericWeight,
+        timestamp: serverTimestamp(),
+        userId: user?.uid ?? null,
+      });
+
+      console.log(`Lagret ${trashTitle} : ${numericWeight} kg`);
+
+      // tømmer local storage etter lagring
+      await AsyncStorage.removeItem("lastWasteEntry");
+
+      // Går til registrering vellykket skjermen
+      router.push("/(tabs)/successfullyRegistered");
+    } catch (err) {
+      console.error("Save error:", err);
+      Alert.alert("Lagring feilet", "Noe gikk galt under lagring, prøv igjen.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   return (
     <View style={styles.root}>
@@ -249,4 +298,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFF",
   },
+});
 });
