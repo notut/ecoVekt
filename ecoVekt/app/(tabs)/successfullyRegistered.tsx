@@ -50,9 +50,9 @@ export default function SuccessMessage({
         {/*overskriften */}
         <Text style={styles.header}>Registrering vellykket!</Text>
 
-        {/* sjekk bilde SOM ASSET (må bytte det til et transparrent bilde) */}
+        {/* sjekk bilde SOM ASSET */}
         <Image
-          source={require("../../assets/images/success-icon-19.png")} //BYTT BILDE TIL NOE ANNENT SOM ER TRANSPARENT
+          source={require("../../assets/images/success-icon-19.png")} 
           style={styles.successIcon}
         />
           {/* Underskriften  */}
