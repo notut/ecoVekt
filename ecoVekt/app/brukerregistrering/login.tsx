@@ -1,3 +1,4 @@
+//importerer react og react native komponenter
 import React, { useState } from "react";
 import {
   View,
@@ -8,16 +9,18 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+//importer auth context
 import { useAuthSession } from "@/providers/authctx";
 import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 
-//Farger tatt fra designet
-const main_green = "#5F9D84";
-const light_green = "#7EAC99";
-const text_box_color = "#F8F7F5";
-const text_color = "#525252";
+//Komponenter
+import { BottomLeaves } from "@/components/Bottom_leaves";
+import { TopLeaf } from "@/components/top_leaf";
+import { colors } from "@/components/colors";
+import { PasswordInput } from "@/components/passwordInput";
 
+//Login funksjon
 export const LoginScreen: React.FC = () => {
   const { signIn, isLoading } = useAuthSession();
 
@@ -37,17 +40,15 @@ export const LoginScreen: React.FC = () => {
     router.push("/brukerregistrering/autentication?signup=true");
   };
 
+  //JSX returnerer komponentene på skjermen
   return (
     <SafeAreaView
       style={styles.safe}
       edges={["left", "right", "bottom"]}
     >
       <View style={styles.container}>
-        {/* TOPP-BLAD */}
-        <Image
-          source={require("../../assets/images/green_leaf.png")}
-          style={styles.topLeaf}
-        />
+        {/* TOPP BLAD */}
+        <TopLeaf />
 
         {/* LOGO */}
         <Image
@@ -68,34 +69,16 @@ export const LoginScreen: React.FC = () => {
             />
           </View>
 
+          {/* PASSORD */}
           <View style={styles.inputContainer}>
-
-            {/* Passordboks */}
-            <View style={styles.passwordRow}>
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Passord"
-                secureTextEntry={!showPassword}
-                style={[styles.input, styles.passwordInput]}
-              />
-
-              {/* øyeikon */}
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Feather
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={22}
-                  color={"#989797ff"}
-                />
-              </TouchableOpacity>
-
-            </View>
+            <PasswordInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Passord"
+             />
           </View>
 
+          {/* LOGIN KNAPP */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleLogin}
@@ -104,6 +87,7 @@ export const LoginScreen: React.FC = () => {
             <Text style={styles.primaryButtonText}>Logg inn</Text>
           </TouchableOpacity>
 
+          {/* REGISTRER BRUKER */}
           <View style={styles.registerRow}>
             <Text style={styles.registerText}>Ikke bruker? </Text>
             <TouchableOpacity onPress={handleRegister}>
@@ -113,39 +97,22 @@ export const LoginScreen: React.FC = () => {
         </View>
 
         {/* NEDERSTE BLADER */}
-        <Image
-          source={require("../../assets/images/bottom_dark_leaf.png")}
-          style={styles.bottomDark}
-        />
-        <Image
-          source={require("../../assets/images/bottom_light_leaf.png")}
-          style={styles.bottomLight}
-        />
+        <BottomLeaves />
       </View>
     </SafeAreaView>
   );
 };
 
+// Stiler
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
     position: "relative",
-  },
-
-  /* TOPP BLAD */
-  topLeaf: {
-    position: "absolute",
-    transform: [{ rotate: "5deg" }],
-    width: 400,
-    height: 320,
-    top: -110,
-    left: -40,
-    resizeMode: "contain",
   },
 
   /* LOGO */
@@ -169,44 +136,27 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginBottom: 20,
   },
+
   inputLabel: {
     fontSize: 14,
-    color: text_color,
+    color: colors.text,
     marginBottom: 4,
   },
+
   input: {
-    backgroundColor: text_box_color,
+    backgroundColor: colors.textBox,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: main_green,
+    borderColor: colors.mainGreen,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 16,
-    color: text_color,
-  },
-
-  /* Passordfelt */
-  passwordRow: {
-    position: "relative",      
-    justifyContent: "center",
-  },
-  passwordInput: {
-    paddingRight: 46,          
-  },
-
-  /* Øyeikonet */
-  eyeButton: {
-    position: "absolute",
-    right: 18,
-    top: "50%",
-    marginTop: -11,            // halv ikon-høyde (22/2)
-    justifyContent: "center",
-    alignItems: "center",
+    color: colors.text,
   },
 
   primaryButton: {
     marginTop: 20,
-    backgroundColor: main_green,
+    backgroundColor: colors.mainGreen,
     borderRadius: 12,
     paddingVertical: 17,
     alignItems: "center",
@@ -216,6 +166,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
@@ -227,33 +178,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: 20,
   },
+
   registerText: {
-    color: text_color,
-  },
-  registerLink: {
-    color: main_green,
-    fontWeight: "600",
+    color: colors.text,
   },
 
-  /* NEDRE BLADER */
-  bottomLight: {
-    position: "absolute",
-    width: 190.43,
-    height: 299.38,
-    bottom: -50,
-    right: -40,
-    resizeMode: "contain",
-    zIndex: 2,
-  },
-  bottomDark: {
-    position: "absolute",
-    width: 310,
-    height: 209.28,
-    bottom: -40,
-    right: -40,
-    resizeMode: "contain",
-    zIndex: 1,
-  },
+  registerLink: {
+    color: colors.mainGreen,
+    fontWeight: "600",
+  }
 });
 
 export default LoginScreen;

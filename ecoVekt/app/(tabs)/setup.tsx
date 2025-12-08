@@ -117,6 +117,8 @@ export default function SetupBusiness() {
         // TagsList must be updated to pass item.title, not item.id
         onToggle={toggleSelection} 
       />
+      
+      <Text style={styles.promptText}>Klar til å sette i gang?</Text>
 
       <TouchableOpacity 
         style={styles.button} 
@@ -132,6 +134,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: 'white',
     // 🔑 CORRECTION: Removed marginTop: 120 and ensured paddingTop is sufficient
     paddingTop: 40, // Keeping 40 as a good starting point for padding from the top
     // marginTop: 120, <--- REMOVED THIS LINE
@@ -149,9 +152,20 @@ const styles = StyleSheet.create({
     color: "#507C6D",
     // Text automatically wraps unless specifically constrained (e.g., numberOfLines: 1)
   },
+  // ⬆️ UPDATED: bottom: 90 -> 120 (Moved up 30 units)
+  promptText: {
+    fontSize: 18,
+    fontFamily: "Poppins_400Regular",
+    color: "#507C6D",
+    textAlign: "center",
+    position: "absolute",
+    bottom: 150, // Moved up from 90
+    alignSelf: "center",
+  },
+  // ⬆️ UPDATED: bottom: 30 -> 60 (Moved up 30 units)
   button: {
     position: "absolute",
-    bottom: 30,
+    bottom: 90, // Moved up from 30
     alignSelf: "center",
     backgroundColor: "#507C6D",
     paddingVertical: 15,
@@ -159,7 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   buttonText: {
-    color: "#ffff",
+    color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "Poppins_500Medium",
   },

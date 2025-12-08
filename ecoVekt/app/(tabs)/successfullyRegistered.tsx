@@ -1,161 +1,99 @@
-
-//IMPORT - henter inn komponenter og verktøy
 import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Header } from "@/components/header";
-import { StepProgress } from "@/components/stepProgress";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import TopLeaf from "@/components/top_leaf";
+import BottomLeaves from "@/components/Bottom_leaves";
 
 //DESIGN - gjenbruk av farger fra prosjektet
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
+const BG = "#FFFFFF";
 
-// Skjerm komponenten for registrering er vellykket. 
-export default function SuccessfullyRegistered() {
 
-// State håntering og navigasjon med steps.
+//farge
+const TEXT_DARK = "#507C6D";
+const BG = "#FFFFFF";
+
+
+//  Props-type for gjenbruk
+type SuccessMessageProps = {
+  redirectTo: string;
+  title?: string;
+  message?: string;
+  delay?: number;
+};
+
+export default function SuccessMessage({
+  redirectTo,
+  title = "Registrering vellykket!",
+  message = "Takk for at du tar vare på miljøet.",
+  delay = 3000,
+}: SuccessMessageProps) {
   const router = useRouter();
-  const [lastEntry, setLastEntry] = React.useState<any>(null);
-  const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  // Dataflyt fra local store til UI
+  //  Auto-redirect etter 3 sek
   useEffect(() => {
-    const loadLast = async () => {
-      const raw = await AsyncStorage.getItem("lastWasteEntry");
-      if (raw) setLastEntry(JSON.parse(raw));
-    };
-    loadLast();
-  }, []);
+    const timer = setTimeout(() => {
+      router.replace("/chooseWaste" as any);
+    }, 3000);
 
-   // renedering av UI for skjermen. 
-  return (
-    <View style={styles.root}>
+    return () => clearTimeout(timer);
+  }, [router]);
+
  
- {/* Header komponent som vises øverst i UI */} 
-<Header
-  title="Registrering vellykket"
-  onBackPress={() => {}}
-  onProfilePress={() => {}}
-  containerStyle={{ height: 80, justifyContent: "flex-start", overflow: "hidden", paddingLeft: 10,
-}}
+ return (
+    <View style={styles.root}>
+       {/* øverste bleder */}
+    <TopLeaf />
 
-  titleStyle={{ 
-    fontSize: 20,
-    marginTop: 40,     
-    textAlign: "left",  
-    alignSelf: "flex-start", 
-    color: "#FFFFFF",
-    fontWeight: "600",
-  }}
-/>
-
-
- {/* Steg indikator 1, 2, og 3
-      <View style={styles.stepWrapper}>
-        <StepProgress steps={steps} currentStep={3} />
-      </View>
-*/}
-
-{/* suksess meldin til bruker */}
+    {/* nederste balder */}
+    <BottomLeaves />
+    
       <View style={styles.content}>
-        <Text style={styles.header}> Ditt avfallet er registrert!</Text>
-        <Text style={styles.text}> Du kan gå til «Ditt avfall» for å se oversikten. </Text>
 
-{/* sist registrerte avfalsboks, hentes fra localstore og vises i UI om data finnes */}
-        {lastEntry && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoLabel}> Registrert avfall:</Text>
-            <Text style={styles.infoTitle}>
-              {lastEntry.wasteTitle} - {lastEntry.weightKg} kg
-            </Text>
-          </View>
-        )}
+        {/*overskriften */}
+        <Text style={styles.header}>Registrering vellykket!</Text>
 
-{/* Navigasjons knapper */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.replace("/(tabs)/yourTrash")}
-        >
-          <Text style={styles.buttonText}> Ditt avfall</Text>
-        </TouchableOpacity>
+        {/* sjekk bilde SOM ASSET */}
+        <Image
+          source={require("../../assets/images/success-icon-19.png")} 
+          style={styles.successIcon}
+        />
+          {/* Underskriften  */}
+        <Text style={styles.text}>Takk for at du tar vare på miljøet.</Text>
 
-{/* Registrer mer avfall knapp */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#E8EEE9", borderWidth: 2, borderColor: PRIMARY }]}
-          onPress={() => router.replace("/(tabs)/chooseWaste")}
-        >
-          <Text style={[styles.buttonText, { color: PRIMARY }]}> Registrer mer avfall</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
-};
+}
 
-/* Styling */
-    const styles = StyleSheet.create({
+// STYLING
+const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
   },
   content: {
     flex: 1,
-    padding: 20,
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: 250,
+  },
+  successIcon: {
+    width: 70,
+    height: 130,
+    resizeMode: "contain",
+
   },
   header: {
-    fontSize: 30,
-    fontWeight: "700",
+   fontSize: 20,
     color: TEXT_DARK,
     textAlign: "center",
-    marginBottom: 200,
-  },
-
-  //BILDE AV LOGO I MIDTEN KANSKJE ? //
-
+   
+    },
   text: {
     fontSize: 16,
     color: TEXT_DARK,
     textAlign: "center",
-    marginBottom: 30,
-  },
-  infoBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 20,
-    elevation: 2,
-    width: "100%",
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7A75",
-    marginBottom: 2,
-  },
-  infoTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: TEXT_DARK,
-  },
-  button: {
-    width: "70%",
-    backgroundColor: PRIMARY,
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFF",
-    textAlign: "center",
-  },
-  stepWrapper: {
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 20,
   },
 });

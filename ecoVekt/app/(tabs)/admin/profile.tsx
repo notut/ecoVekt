@@ -7,6 +7,7 @@ import {
   Dimensions,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -137,89 +138,99 @@ export default function ProfilePage(): React.ReactElement {
     router.replace("/brukerregistrering/autentication");
   };
 
+ 
   return (
-    <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Administrator</Text>
-      </View>
-
-      {/* PROFILE BOX */}
-      <View style={styles.box}>
-        <Text style={styles.boxTitle}>Profil</Text>
-        <View style={styles.infoBox}>
-          <Text style={styles.label}>Bedrift:</Text>
-          <Text style={styles.label}>Ansattnummer:</Text>
-          <Text style={styles.label}>Email:</Text>
-        </View>
-      </View>
-
-      {/* SELECTED WASTE */}
-      <Text style={styles.sectionTitle}>Valgt avfall</Text>
-
-      <View style={styles.chipContainer}>
-        {selectedWaste.map((t) => (
-          <View key={t} style={styles.chip}>
-            <Text style={styles.chipText}>{t}</Text>
+    <FlatList
+      data={trashItems}
+      keyExtractor={(i) => i.id}
+      // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
+      ListHeaderComponent={() => (
+        <View style={{ paddingBottom: 16 }}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Administrator</Text>
           </View>
-        ))}
-      </View>
 
-      <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
-        <Text style={styles.linkText}>Legg til mer</Text>
-      </Pressable>
-
-      {/* CHART */}
-      <Text style={styles.sectionTitle}>Total mengde avfall</Text>
-      <Text style={styles.subText}>Siste 4 uker</Text>
-
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
-        {loading ? (
-          <ActivityIndicator color="#6B8F71" />
-        ) : chartData.length ? (
-          <View style={{ width: screenWidth, alignItems: "center" }}>
-            <PieChart
-              data={chartData}
-              width={screenWidth - 30}
-              height={230}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft={"20"}
-              hasLegend={false}
-              absolute={false}
-              chartConfig={{
-                color: () => `#000`,
-                labelColor: () => `#000`,
-              }}
-            />
-
-            <View style={styles.tooltip}>
-              <Text style={styles.tooltipText}>{tooltipText}</Text>
+          {/* PROFILE BOX */}
+          <View style={styles.box}>
+            <Text style={styles.boxTitle}>Profil</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.label}>Bedrift:</Text>
+              <Text style={styles.label}>Ansattnummer:</Text>
+              <Text style={styles.label}>Email:</Text>
             </View>
           </View>
-        ) : (
-          <Text style={styles.noData}>Ingen data for diagram</Text>
-        )}
-      </View>
 
-      {/* LIST */}
-      <FlatList
-        data={trashItems}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <View style={styles.listCard}>
-            <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
-            <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
-            {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
+          {/* SELECTED WASTE */}
+          <Text style={styles.sectionTitle}>Valgt avfall</Text>
+          <View style={styles.chipContainer}>
+            {selectedWaste.map((t) => (
+              <View key={t} style={styles.chip}>
+                <Text style={styles.chipText}>{t}</Text>
+              </View>
+            ))}
           </View>
-        )}
-      />
 
-      {/* LOGOUT */}
-      <Pressable onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Logg ut</Text>
-      </Pressable>
-    </View>
+          <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+            <Text style={styles.linkText}>Legg til mer</Text>
+          </Pressable>
+
+          {/* CHART */}
+          <Text style={styles.sectionTitle}>Total mengde avfall</Text>
+          <Text style={styles.subText}>Siste 4 uker</Text>
+
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            {loading ? (
+              <ActivityIndicator color="#6B8F71" />
+            ) : chartData.length ? (
+              <View style={{ width: screenWidth, alignItems: "center" }}>
+                <PieChart
+                  data={chartData}
+                  width={screenWidth - 30}
+                  height={230}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft={"20"}
+                  hasLegend={false}
+                  absolute={false}
+                  chartConfig={{
+                    color: () => `#000`,
+                    labelColor: () => `#000`,
+                  }}
+                />
+
+                <View style={styles.tooltip}>
+                  <Text style={styles.tooltipText}>{tooltipText}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.noData}>Ingen data for diagram</Text>
+            )}
+          </View>
+
+          {/* Litt padding mellom header og liste */}
+          <View style={{ height: 8 }} />
+        </View>
+      )}
+
+      // renderItem viser hvert trash-element (samme som før)
+      renderItem={({ item }) => (
+        <View style={styles.listCard}>
+          <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
+          <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
+          {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
+        </View>
+      )}
+
+      ListFooterComponent={() => (
+        <View style={{ paddingTop: 20 }}>
+          <Pressable onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Logg ut</Text>
+          </Pressable>
+        </View>
+      )}
+      contentContainerStyle={{ paddingBottom: 80 }}
+    />
   );
 }
 
