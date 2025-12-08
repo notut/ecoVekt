@@ -16,9 +16,9 @@ import { StepProgress } from "@/components/stepProgress";
 import { auth, db } from "../../firebaseConfig";
 
 // Design - gjenbruk fra prosjektet
-const PRIMARY = "#6C8C76";
+const PRIMARY = "#5F9D84";
 const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
+const BG = "#FFFFFF";
 
 type RouteParams = {
   trashId?: string;
@@ -34,53 +34,56 @@ export default function RegistrerVekt() {
 
   // funksjon for lagring og fullføring
   const handleFullfor = async () => {
-    if (!trashTitle) {
-      Alert.alert("Feil", "Avfallstype mangler.");
-      return;
-    }
+  if (!trashTitle) {
+    Alert.alert("Feil", "Avfallstype mangler.");
+    return;
+  }
 
-    // TYDELIG ENDRENEDE VALIDERINGER START
-    const numericWeight = Number(weight);
+  const numericWeight = Number(weight);
 
-    //  feil meldnig ved urealistisk verdier
-    if (weight.trim() === "" || Number.isNaN(numericWeight) || numericWeight <= 0) {
-      Alert.alert("Ugyldig input", "Du må skrive inn et gyldig tall i kg (større enn 0).");
-      return;
-    }
+  if (weight.trim() === "" || Number.isNaN(numericWeight) || numericWeight <= 0) {
+    Alert.alert("Ugyldig input", "Du må skrive inn et gyldig tall i kg (større enn 0).");
+    return;
+  }
 
-    if (numericWeight > 500) {
-      Alert.alert("Urealistisk verdi", "Maks tillatt vekt er 500 kg per registrering.");
-      return;
-    }
-    
-    const user = auth.currentUser;
+  if (numericWeight > 500) {
+    Alert.alert("Urealistisk verdi", "Maks tillatt vekt er 500 kg per registrering.");
+    return;
+  }
 
-    try {
-      setSaving(true);
+  const user = auth.currentUser;
 
-      // lagrer avfall i Firestore og logger resultat i konsollen
-      await addDoc(collection(db, "waste"), {
-        wasteId: trashId ?? null,
-        wasteTitle: trashTitle,
-        amountKg: numericWeight,
-        timestamp: serverTimestamp(),
-        userId: user?.uid ?? null,
-      });
-
-      console.log(`Lagret ${trashTitle} : ${numericWeight} kg`);
-
-      // tømmer local storage etter lagring
-      await AsyncStorage.removeItem("lastWasteEntry");
-
-      // Går til registrering vellykket skjermen
-      router.push("/(tabs)/successfullyRegistered");
-    } catch (err) {
-      console.error("Save error:", err);
-      Alert.alert("Lagring feilet", "Noe gikk galt under lagring, prøv igjen.");
-    } finally {
-      setSaving(false);
-    }
+  // én registrering
+  const entry = {
+    wasteId: trashId ?? null,
+    wasteTitle: trashTitle,
+    amountKg: numericWeight,
+    userId: user?.uid ?? null,
+    savedAt: new Date().toISOString(),
   };
+
+  try {
+    setSaving(true);
+
+    // 🔹 1. Hent eksisterende lokale registreringer
+    const raw = await AsyncStorage.getItem("pendingWasteEntries");
+    const list = raw ? (JSON.parse(raw) as typeof entry[]) : [];
+
+    // 🔹 2. Legg til den nye
+    list.push(entry);
+
+    // 🔹 3. Lagre tilbake i localStorage
+    await AsyncStorage.setItem("pendingWasteEntries", JSON.stringify(list));
+
+    // 🔹 4. Gå til YourTrash (steg 3)
+    router.push("/(tabs)/yourTrash");
+  } catch (err) {
+    console.error("Lokal lagring feilet:", err);
+    Alert.alert("Feil", "Klarte ikke å lagre lokalt. Prøv igjen.");
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <View style={styles.root}>
