@@ -21,9 +21,9 @@ type TrashType = {
   imageUrl?: string;
 };
 
-const PRIMARY = "#6C8C76";
+const PRIMARY = "#5F9D84";
 const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
+const BG = "#FFFFFF";
 
 export default function ChooseWaste() {
   const [trashTypes, setTrashTypes] = useState<TrashType[]>([]);

@@ -10,7 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 //DESIGN - gjenbruk av farger fra prosjektet
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
+const BG = "#FFFFFF";
 
 // Skjerm komponenten for registrering er vellykket. 
 export default function SuccessfullyRegistered() {

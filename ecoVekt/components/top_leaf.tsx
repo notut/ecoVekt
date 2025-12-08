@@ -4,7 +4,7 @@ import { Image, StyleSheet } from "react-native";
 export const TopLeaf: React.FC = () => {
   return (
     <Image
-      source={require("../assets/green_leaf.png")}
+      source={require("../assets/images/green_leaf.png")}
       style={styles.topLeaf}
     />
   );
