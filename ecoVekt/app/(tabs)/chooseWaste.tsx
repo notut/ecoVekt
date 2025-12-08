@@ -144,11 +144,21 @@ export default function ChooseWaste() {
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         {trashTypes.map((item) => (
-          <WasteCard
-            key={item.id}
-            item={item}
-            onSelect={(selected: TrashType) => handleSelect(selected)}
-          />
+          // inne i ChooseWaste
+<WasteCard
+  key={item.id}
+  item={item}
+  onSelect={(selected: TrashType) => {
+    router.push({
+      pathname: "/(tabs)/logWeight",
+      params: {
+        trashId: selected.id,
+        trashTitle: selected.title,
+        imageUrl: selected.imageUrl ?? "",   // 👈 NY
+      },
+    });
+  }}
+/>
         ))}
       </ScrollView>
     </View>
