@@ -5,11 +5,11 @@ export const BottomLeaves: React.FC = () => {
   return (
     <>
       <Image
-        source={require("../assets/bottom_dark_leaf.png")}
+        source={require("../assets/images/bottom_dark_leaf.png")}
         style={styles.bottomDark}
       />
       <Image
-        source={require("../assets/bottom_light_leaf.png")}
+        source={require("../assets/images/bottom_light_leaf.png")}
         style={styles.bottomLight}
       />
     </>
