@@ -5,6 +5,11 @@ import { Header } from "@/components/header";
 import TopLeaf from "@/components/top_leaf";
 import BottomLeaves from "@/components/Bottom_leaves";
 
+//DESIGN - gjenbruk av farger fra prosjektet
+const PRIMARY = "#6C8C76";
+const TEXT_DARK = "#486258";
+const BG = "#FFFFFF";
+
 
 //farge
 const TEXT_DARK = "#507C6D";

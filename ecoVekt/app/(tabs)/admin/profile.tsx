@@ -7,27 +7,23 @@ import {
   Dimensions,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
-
 import {
   getFirestore,
   collection,
   query,
+  where,
   getDocs,
   doc,
   getDoc,
-  where,
 } from "firebase/firestore";
-import { useAuthSession } from "@/providers/authctx";
+import { PieChart } from "react-native-chart-kit";
 
-
-// Egendefinert Pie Chart via SVG
-import Svg, { G, Path } from "react-native-svg";
-
-// Firebase referanser
 const auth = getAuth();
 const db = getFirestore();
 
@@ -42,135 +38,84 @@ export default function ProfilePage(): React.ReactElement {
   const { signOut } = useAuthSession();
   const router = useRouter();
 
-  //State-variabler
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [tooltipText, setTooltipText] = useState<string>("");
   const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
-  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
 
-  //Funksjon for å konvertere HSL til HEX (for støtte i react-native-svg)
-  const hslToHex = (h: number, s: number, l: number) => {
-    s /= 100;
-    l /= 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n: number) => {
-      const k = (n + h / 30) % 12;
-      const inner = Math.min(k - 3, 9 - k);
-      const bounded = Math.max(-1, Math.min(inner, 1));
-      const color = l - a * bounded;
-      return Math.round(255 * color);
-    };
-    const toHex = (v: number) => v.toString(16).padStart(2, "0");
-    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
-  };
-
-  //Genererer unike farger i HEX-format
   const generateColors = (n: number) => {
     const colors: string[] = [];
-    const step = Math.floor(360 / Math.max(1, n));
+    const hueStep = Math.floor(360 / Math.max(1, n));
     for (let i = 0; i < n; i++) {
-      const hue = (i * step) % 360;
-      colors.push(hslToHex(hue, 65, 50));
+      const hue = (i * hueStep) % 360;
+      colors.push(`hsl(${hue}deg 60% 45%)`);
     }
     return colors;
   };
 
-  //Standard farger per type
-  const defaultColors: Record<string, string> = {
-    Restavfall: "#6B8F71",
-    Plast: "#FFD400",
-    Papir: "#3B82F6",
-    Glass: "#10B981",
-    Mat: "#D97706",
-    Metall: "#9CA3AF",
-    Elektronikk: "#7C3AED",
-    Ukjent: "#A0AEC0",
-  };
-
-  const colorMapRef = React.useRef<Record<string, string>>({ ...defaultColors });
-
-  //Henter avfallsdata fra Firestore
   const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      //Henter alle dokumenter fra "waste" 
-      const wasteCol = collection(db, "waste");
-      const q = query(wasteCol, where("userId", "==", uid));
+      const yourTrashCol = collection(db, "yourTrash");
+      const q = uid ? query(yourTrashCol, where("uid", "==", uid)) : query(yourTrashCol);
       const snap = await getDocs(q);
 
       const results: TrashItemType[] = [];
-
       snap.forEach((docSnap) => {
         const d = docSnap.data() as any;
-
-        //Normaliserer feltnavn 
-        const weight = Number(d.amountKg ?? d.amount ?? 0);
-        const createdAt = d.createdAt ?? d.timestamp ?? null;
-        const type = d.wasteTitle ?? d.type ?? d.wasteName ?? "Ukjent";
-
         results.push({
           id: docSnap.id,
-          weight,
-          createdAt,
-          type,
+          weight: d.weight || 0,
+          createdAt: d.createdAt ?? null,
+          type: d.type,
         });
       });
 
       setTrashItems(results);
 
-      //Summerer vekt per avfallstype
       const totals: Record<string, number> = {};
-      results.forEach((entry) => {
-        const t = entry.type ?? "Ukjent";
-        totals[t] = (totals[t] || 0) + entry.weight;
+      results.forEach((r) => {
+        const t = r.type ?? "Ukjent";
+        totals[t] = (totals[t] || 0) + r.weight;
       });
 
       const types = Object.keys(totals);
-
-      if (types.length > 0) {
-        //Tildeler farger til nye typer som ikke finnes fra før
-        const missing = types.filter((t) => !colorMapRef.current[t]);
-
-        if (missing.length) {
-          const newColors = generateColors(missing.length);
-          missing.forEach((t, i) => (colorMapRef.current[t] = newColors[i]));
-        }
-
-        //Klargjør chartData for pie-chart
-        const arr = types.map((t) => ({
+      if (types.length) {
+        const colors = generateColors(types.length);
+        const arr = types.map((t, i) => ({
           name: t,
           population: totals[t],
-          color: colorMapRef.current[t],
+          color: colors[i],
+          legendFontColor: "#ffffff",
+          legendFontSize: 12,
         }));
-
         setChartData(arr);
+
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+        const total = totals[defaultPick] ?? 0;
+        setTooltipText(`Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`);
       } else {
         setChartData([]);
+        setTooltipText("");
       }
-    } catch (e) {
-      console.error("Feil ved henting av data:", e);
     } finally {
       setLoading(false);
     }
   };
 
-  //Henter brukerens valgte avfallstyper
   const fetchSelectedWaste = async () => {
-    if (!currentUser) return;
-    try {
-      const userDoc = doc(db, "users", currentUser.uid);
-      const snap = await getDoc(userDoc);
-      if (snap.exists()) {
-        setSelectedWaste(snap.data().selectedWaste || []);
-      }
-    } catch (e) {
-      console.error("Kunne ikke hente brukerdata:", e);
+    if (!currentUser) return setSelectedWaste([]);
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      const arr = userSnap.data().selectedWaste || [];
+      setSelectedWaste(arr);
     }
   };
 
-  //Lytt etter innlogging og last data
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u);
@@ -179,7 +124,6 @@ export default function ProfilePage(): React.ReactElement {
     return () => unsub();
   }, []);
 
-  //Oppdater når siden fokuseres
   useFocusEffect(
     useCallback(() => {
       fetchSelectedWaste();
@@ -187,147 +131,108 @@ export default function ProfilePage(): React.ReactElement {
     }, [currentUser?.uid])
   );
 
-  // Bredde for diagram
   const screenWidth = Dimensions.get("window").width - 48;
 
-  //Lager path til en pie-slice
-  const createArcPath = (radius: number, start: number, end: number) => {
-    const polar = (angle: number) => ({
-      x: radius * Math.cos((angle * Math.PI) / 180),
-      y: radius * Math.sin((angle * Math.PI) / 180),
-    });
-
-    const startP = polar(start);
-    const endP = polar(end);
-    const largeArc = end - start > 180 ? 1 : 0;
-
-    return `M 0 0 L ${startP.x} ${startP.y} A ${radius} ${radius} 0 ${largeArc} 1 ${endP.x} ${endP.y} Z`;
-  };
-
-  //Logg ut
   const handleLogout = async () => {
     await signOut();
     router.replace("/brukerregistrering/autentication");
   };
 
-
+ 
   return (
-    <View style={styles.container}>
-
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Administrator</Text>
-      </View>
-
-      {/* PROFIL */}
-      <View style={styles.box}>
-        <Text style={styles.boxTitle}>Profil</Text>
-        <View style={styles.infoBox}>
-          <Text style={styles.label}>Bedrift:</Text>
-          <Text style={styles.label}>Ansattnummer:</Text>
-          <Text style={styles.label}>Email:</Text>
-        </View>
-      </View>
-
-      {/* VALGT AVFALL */}
-      <Text style={styles.sectionTitle}>Valgt avfall</Text>
-      <View style={styles.chipContainer}>
-        {selectedWaste.map((t) => (
-          <View key={t} style={styles.chip}>
-            <Text style={styles.chipText}>{t}</Text>
+    <FlatList
+      data={trashItems}
+      keyExtractor={(i) => i.id}
+      // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
+      ListHeaderComponent={() => (
+        <View style={{ paddingBottom: 16 }}>
+          {/* HEADER */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Administrator</Text>
           </View>
-        ))}
-      </View>
 
-      {/* LEGG TIL MER */}
-      <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
-        <Text style={styles.linkText}>Legg til mer</Text>
-      </Pressable>
+          {/* PROFILE BOX */}
+          <View style={styles.box}>
+            <Text style={styles.boxTitle}>Profil</Text>
+            <View style={styles.infoBox}>
+              <Text style={styles.label}>Bedrift:</Text>
+              <Text style={styles.label}>Ansattnummer:</Text>
+              <Text style={styles.label}>Email:</Text>
+            </View>
+          </View>
 
-      {/* DIAGRAM */}
-      <Text style={styles.sectionTitle}>Total mengde avfall</Text>
-      <Text style={styles.subText}>Siste 4 uker</Text>
-
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
-        {loading ? (
-          <ActivityIndicator color="#6B8F71" />
-        ) : chartData.length ? (
-          <View>
-
-            {/* PIE CHART (SVG) */}
-            <Svg width={screenWidth} height={230}>
-              <G x={screenWidth / 2} y={115}>
-                {(() => {
-                  const radius = 90;
-                  const total = chartData.reduce((acc, c) => acc + c.population, 0);
-                  let startAngle = -90;
-
-                  return chartData.map((slice) => {
-                    const value = slice.population;
-                    const angle = (value / total) * 360;
-                    const endAngle = startAngle + angle;
-
-                    const d = createArcPath(radius, startAngle, endAngle);
-
-                    startAngle = endAngle;
-
-                    return (
-                      <Path
-                        key={slice.name}
-                        d={d}
-                        fill={slice.color}
-                        stroke="#fff"
-                        strokeWidth={1}
-                        onPress={() =>
-                          setSelectedSlice(
-                            selectedSlice?.name === slice.name
-                              ? null
-                              : { name: slice.name, value: slice.population }
-                          )
-                        }
-                      />
-                    );
-                  });
-                })()}
-              </G>
-            </Svg>
-
-            {/* TOOLTIP - vises kun ved trykk */}
-            {selectedSlice && (
-              <View style={styles.tooltip}>
-                <Text style={styles.tooltipText}>
-                  Du har kastet {selectedSlice.value} kg {selectedSlice.name.toLowerCase()}.
-                </Text>
+          {/* SELECTED WASTE */}
+          <Text style={styles.sectionTitle}>Valgt avfall</Text>
+          <View style={styles.chipContainer}>
+            {selectedWaste.map((t) => (
+              <View key={t} style={styles.chip}>
+                <Text style={styles.chipText}>{t}</Text>
               </View>
+            ))}
+          </View>
+
+          <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+            <Text style={styles.linkText}>Legg til mer</Text>
+          </Pressable>
+
+          {/* CHART */}
+          <Text style={styles.sectionTitle}>Total mengde avfall</Text>
+          <Text style={styles.subText}>Siste 4 uker</Text>
+
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            {loading ? (
+              <ActivityIndicator color="#6B8F71" />
+            ) : chartData.length ? (
+              <View style={{ width: screenWidth, alignItems: "center" }}>
+                <PieChart
+                  data={chartData}
+                  width={screenWidth - 30}
+                  height={230}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft={"20"}
+                  hasLegend={false}
+                  absolute={false}
+                  chartConfig={{
+                    color: () => `#000`,
+                    labelColor: () => `#000`,
+                  }}
+                />
+
+                <View style={styles.tooltip}>
+                  <Text style={styles.tooltipText}>{tooltipText}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.noData}>Ingen data for diagram</Text>
             )}
-
           </View>
-        ) : (
-          <Text style={styles.noData}>Ingen data for diagram</Text>
-        )}
-      </View>
 
-      {/* LISTE MED ALLE REGISTRERINGER */}
-      <FlatList
-        data={trashItems}
-        keyExtractor={(i) => i.id}
-        renderItem={({ item }) => (
-          <View style={styles.listCard}>
-            <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
-            <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
-            <Text style={styles.listText}>Type: {item.type}</Text>
-          </View>
-        )}
-      />
+          {/* Litt padding mellom header og liste */}
+          <View style={{ height: 8 }} />
+        </View>
+      )}
 
-      {/* LOGG UT */}
-      <Pressable onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Logg ut</Text>
-      </Pressable>
-    </View>
+      // renderItem viser hvert trash-element (samme som før)
+      renderItem={({ item }) => (
+        <View style={styles.listCard}>
+          <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
+          <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
+          {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
+        </View>
+      )}
+
+      ListFooterComponent={() => (
+        <View style={{ paddingTop: 20 }}>
+          <Pressable onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Logg ut</Text>
+          </Pressable>
+        </View>
+      )}
+      contentContainerStyle={{ paddingBottom: 80 }}
+    />
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -344,7 +249,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 18,
   },
-
   headerTitle: {
     color: "#2F3E36",
     fontSize: 22,
@@ -359,21 +263,18 @@ const styles = StyleSheet.create({
     borderColor: "#DDE7E2",
     marginBottom: 20,
   },
-
   boxTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: "#2F3E36",
     marginBottom: 12,
   },
-
   infoBox: {
     borderWidth: 1,
     borderColor: "#DDE7E2",
     padding: 12,
     borderRadius: 10,
   },
-
   label: {
     color: "#4A5C54",
     paddingVertical: 4,
@@ -385,7 +286,6 @@ const styles = StyleSheet.create({
     color: "#2F3E36",
     marginBottom: 10,
   },
-
   subText: {
     color: "#6B7A75",
     marginBottom: 16,
@@ -405,7 +305,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 22,
   },
-
   chipText: {
     color: "#2F3E36",
   },
@@ -413,7 +312,6 @@ const styles = StyleSheet.create({
   linkButton: {
     marginBottom: 26,
   },
-
   linkText: {
     color: "#5E7C6B",
     textDecorationLine: "underline",
@@ -428,14 +326,13 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    alignSelf: "center",
-    marginTop: -40,
+    marginTop: -50,
   },
-
   tooltipText: {
     color: "#2F3E36",
     textAlign: "center",
     fontSize: 14,
+    width: 230,
   },
 
   noData: {
@@ -450,12 +347,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-
   listTitle: {
     fontWeight: "600",
     color: "#2F3E36",
   },
-
   listText: {
     marginTop: 6,
     color: "#4A5C54",
@@ -468,7 +363,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginBottom: 40,
   },
-
   logoutText: {
     textAlign: "center",
     color: "white",
