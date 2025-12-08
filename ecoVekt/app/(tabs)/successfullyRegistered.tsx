@@ -1,161 +1,81 @@
-
-//IMPORT - henter inn komponenter og verktøy
 import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { Header } from "@/components/header";
-import { StepProgress } from "@/components/stepProgress";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import TopLeaf from "@/components/top_leaf";
+import BottomLeaves from "@/components/Bottom_leaves";
+import { colors } from "@/components/colors"; 
 
-//DESIGN - gjenbruk av farger fra prosjektet
-const PRIMARY = "#6C8C76";
-const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
 
-// Skjerm komponenten for registrering er vellykket. 
-export default function SuccessfullyRegistered() {
+type SuccessMessageProps = {
+  redirectTo: string;
+  title?: string;
+  message?: string;
+  delay?: number;
+};
 
-// State håntering og navigasjon med steps.
+export default function SuccessMessage({
+  redirectTo,
+  title = "Registrering vellykket!",
+  message = "Takk for at du tar vare på miljøet.",
+  delay = 3000,
+}: SuccessMessageProps) {
   const router = useRouter();
-  const [lastEntry, setLastEntry] = React.useState<any>(null);
-  const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  // Dataflyt fra local store til UI
+  // Auto-redirect etter 3 sek
   useEffect(() => {
-    const loadLast = async () => {
-      const raw = await AsyncStorage.getItem("lastWasteEntry");
-      if (raw) setLastEntry(JSON.parse(raw));
-    };
-    loadLast();
-  }, []);
+    const timer = setTimeout(() => {
+      router.replace("/chooseWaste" as any);
+    }, 3000);
 
-   // renedering av UI for skjermen. 
+    return () => clearTimeout(timer);
+  }, [router]);
+
   return (
+
+    //hente bottom leaves komponent, setter overskrift, ikon og underoverskriften.
     <View style={styles.root}>
- 
- {/* Header komponent som vises øverst i UI */} 
-<Header
-  title="Registrering vellykket"
-  onBackPress={() => {}}
-  onProfilePress={() => {}}
-  containerStyle={{ height: 80, justifyContent: "flex-start", overflow: "hidden", paddingLeft: 10,
-}}
+      <TopLeaf />
+      <BottomLeaves />
 
-  titleStyle={{ 
-    fontSize: 20,
-    marginTop: 40,     
-    textAlign: "left",  
-    alignSelf: "flex-start", 
-    color: "#FFFFFF",
-    fontWeight: "600",
-  }}
-/>
-
-
- {/* Steg indikator 1, 2, og 3
-      <View style={styles.stepWrapper}>
-        <StepProgress steps={steps} currentStep={3} />
-      </View>
-*/}
-
-{/* suksess meldin til bruker */}
       <View style={styles.content}>
-        <Text style={styles.header}> Ditt avfallet er registrert!</Text>
-        <Text style={styles.text}> Du kan gå til «Ditt avfall» for å se oversikten. </Text>
+        <Text style={styles.header}>Registrering vellykket!</Text>
 
-{/* sist registrerte avfalsboks, hentes fra localstore og vises i UI om data finnes */}
-        {lastEntry && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoLabel}> Registrert avfall:</Text>
-            <Text style={styles.infoTitle}>
-              {lastEntry.wasteTitle} - {lastEntry.weightKg} kg
-            </Text>
-          </View>
-        )}
+        <Image
+          source={require("../../assets/images/success-icon-19.png")}
+          style={styles.successIcon}
+        />
 
-{/* Navigasjons knapper */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.replace("/(tabs)/yourTrash")}
-        >
-          <Text style={styles.buttonText}> Ditt avfall</Text>
-        </TouchableOpacity>
-
-{/* Registrer mer avfall knapp */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: "#E8EEE9", borderWidth: 2, borderColor: PRIMARY }]}
-          onPress={() => router.replace("/(tabs)/chooseWaste")}
-        >
-          <Text style={[styles.buttonText, { color: PRIMARY }]}> Registrer mer avfall</Text>
-        </TouchableOpacity>
+        <Text style={styles.text}>Takk for at du tar vare på miljøet.</Text>
       </View>
     </View>
   );
-};
+}
 
-/* Styling */
-    const styles = StyleSheet.create({
+// styling på siden ved bruk av farger fra komponenter
+const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: colors.background, 
   },
   content: {
     flex: 1,
-    padding: 20,
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: 250,
+  },
+  successIcon: {
+    width: 70,
+    height: 130,
+    resizeMode: "contain",
   },
   header: {
-    fontSize: 30,
-    fontWeight: "700",
-    color: TEXT_DARK,
+    fontSize: 20,
+    color: colors.darkGreen, 
     textAlign: "center",
-    marginBottom: 200,
   },
-
-  //BILDE AV LOGO I MIDTEN KANSKJE ? //
-
   text: {
     fontSize: 16,
-    color: TEXT_DARK,
+    color: colors.text, 
     textAlign: "center",
-    marginBottom: 30,
-  },
-  infoBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 20,
-    elevation: 2,
-    width: "100%",
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6B7A75",
-    marginBottom: 2,
-  },
-  infoTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: TEXT_DARK,
-  },
-  button: {
-    width: "70%",
-    backgroundColor: PRIMARY,
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 10,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFF",
-    textAlign: "center",
-  },
-  stepWrapper: {
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 20,
   },
 });

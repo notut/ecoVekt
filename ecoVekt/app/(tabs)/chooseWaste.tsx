@@ -21,9 +21,9 @@ type TrashType = {
   imageUrl?: string;
 };
 
-const PRIMARY = "#6C8C76";
+const PRIMARY = "#5F9D84";
 const TEXT_DARK = "#486258";
-const BG = "#F5F5F5";
+const BG = "#FFFFFF";
 
 export default function ChooseWaste() {
   const [trashTypes, setTrashTypes] = useState<TrashType[]>([]);
@@ -144,11 +144,21 @@ export default function ChooseWaste() {
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         {trashTypes.map((item) => (
-          <WasteCard
-            key={item.id}
-            item={item}
-            onSelect={(selected: TrashType) => handleSelect(selected)}
-          />
+          // inne i ChooseWaste
+<WasteCard
+  key={item.id}
+  item={item}
+  onSelect={(selected: TrashType) => {
+    router.push({
+      pathname: "/(tabs)/logWeight",
+      params: {
+        trashId: selected.id,
+        trashTitle: selected.title,
+        imageUrl: selected.imageUrl ?? "",   // 👈 NY
+      },
+    });
+  }}
+/>
         ))}
       </ScrollView>
     </View>
