@@ -23,7 +23,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { PieChart } from "react-native-chart-kit";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const auth = getAuth();
 const db = getFirestore();
 
@@ -146,10 +146,20 @@ export default function ProfilePage(): React.ReactElement {
       // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
       ListHeaderComponent={() => (
         <View style={{ paddingBottom: 16 }}>
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Administrator</Text>
-          </View>
+          {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
+          <SafeAreaView style={styles.headerFull}>
+            <View style={styles.headerInner}>
+              {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
+              <Pressable onPress={() => router.back()} style={styles.backButton}>
+                <Text style={styles.backIcon}>‹</Text>
+              </Pressable>
+
+              <Text style={styles.headerTitle}>Administrator</Text>
+
+              {/* høyre side er tom (ingen profil-ikon) */}
+              <View style={styles.headerRight} />
+            </View>
+          </SafeAreaView>
 
           {/* PROFILE BOX */}
           <View style={styles.box}>
@@ -222,6 +232,7 @@ export default function ProfilePage(): React.ReactElement {
         </View>
       )}
 
+      
       ListFooterComponent={() => (
         <View style={{ paddingTop: 20 }}>
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
@@ -237,8 +248,41 @@ export default function ProfilePage(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F5",
+    backgroundColor: "back",
     paddingHorizontal: 14,
+  },
+
+  /* Header som dekker hele toppen */
+  headerFull: {
+    width: "100%",
+    backgroundColor: "#5F9D84",
+  },
+  headerInner: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    position: "absolute",
+    left: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+  backIcon: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "600",
+  },
+  headerRight: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    width: 28,
   },
 
   header: {
@@ -250,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerTitle: {
-    color: "#2F3E36",
+    color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "700",
   },
@@ -285,10 +329,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#2F3E36",
     marginBottom: 10,
+    marginLeft: "3%",
   },
   subText: {
     color: "#6B7A75",
     marginBottom: 16,
+    marginLeft: "3%",
   },
 
   chipContainer: {
@@ -296,11 +342,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 12,
+    marginLeft: "3%",
   },
 
   chip: {
     borderWidth: 1,
-    borderColor: "#5E7C6B",
+    borderColor: "##5F9D84",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 22,
@@ -311,6 +358,7 @@ const styles = StyleSheet.create({
 
   linkButton: {
     marginBottom: 26,
+    marginLeft: "3%",
   },
   linkText: {
     color: "#5E7C6B",
@@ -326,13 +374,13 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    marginTop: -50,
+    marginTop: -60,
   },
   tooltipText: {
     color: "#2F3E36",
     textAlign: "center",
     fontSize: 14,
-    width: 230,
+    width: 250,
   },
 
   noData: {
@@ -357,16 +405,20 @@ const styles = StyleSheet.create({
   },
 
   logoutButton: {
-    backgroundColor: "#6B8F71",
-    paddingVertical: 14,
+    backgroundColor: "#5F9D84",
+    paddingVertical: 17,
     marginTop: 20,
-    borderRadius: 50,
+    borderRadius:20,
     marginBottom: 40,
+    alignContent: "center",
+    margin: "auto",
+    width: "70%",
   },
   logoutText: {
     textAlign: "center",
     color: "white",
     fontWeight: "700",
     fontSize: 16,
+
   },
 });
