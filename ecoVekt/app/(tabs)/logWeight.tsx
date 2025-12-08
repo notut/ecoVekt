@@ -140,7 +140,7 @@ export default function RegistrerVekt() {
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            {saving ? "Lagrer..." : "Fullfør"}
+            {saving ? "Lagrer..." : ""}
           </Text>
         </TouchableOpacity>
       </View>
