@@ -15,21 +15,41 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function WasteCard({ item, onSelect }: any) {
+type WasteCardProps = {
+  item: {
+    title: string;
+    description?: string;
+    imageUrl?: string | null;
+  };
+  onSelect?: (item: any) => void;
+  /** 
+   * compact = true:
+   *  - ingen pil
+   *  - ingen expand/collapse
+   *  - description vises rett under tittelen (brukes f.eks. på YourTrash)
+   */
+  compact?: boolean;
+};
+
+export default function WasteCard({ item, onSelect, compact = false }: WasteCardProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const toggle = () => {
-    LayoutAnimation.easeInEaseOut();
-    setExpanded(!expanded);
+  const handlePress = () => {
+    onSelect?.(item);
+
+    if (!compact) {
+      LayoutAnimation.easeInEaseOut();
+      setExpanded((prev) => !prev);
+    }
   };
 
   return (
     <View style={styles.card}>
-      {/* TOPP RAD: IKON + TITTEL + PIL */}
+      {/* TOPP RAD: IKON + TITTEL + (EVT. PIL) */}
       <TouchableOpacity
         style={styles.row}
         activeOpacity={0.85}
-        onPress={() => onSelect(item)}
+        onPress={handlePress}
       >
         {/* STORT IKON */}
         {item.imageUrl && (
@@ -43,20 +63,32 @@ export default function WasteCard({ item, onSelect }: any) {
         {/* TEKST */}
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{item.title}</Text>
+
+          {/* I COMPACT-MODUS viser vi beskrivelse (vekt) rett under */}
+          {compact && item.description && (
+            <Text style={styles.compactDescription}>{item.description}</Text>
+          )}
         </View>
 
-        {/* PIL */}
-        <TouchableOpacity onPress={toggle}>
-          <MaterialIcons
-            name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-            size={28}
-            color="#6B7A75"
-          />
-        </TouchableOpacity>
+        {/* PIL KUN I NORMALMODUS */}
+        {!compact && (
+          <TouchableOpacity
+            onPress={() => {
+              LayoutAnimation.easeInEaseOut();
+              setExpanded((prev) => !prev);
+            }}
+          >
+            <MaterialIcons
+              name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+              size={28}
+              color="#6B7A75"
+            />
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
 
-      {/* BESKRIVELSE — KUN NÅR ÅPNET */}
-      {expanded && (
+      {/* BESKRIVELSE — KUN NÅR ÅPNET (NORMALMODUS) */}
+      {!compact && expanded && item.description && (
         <View style={styles.descriptionContainer}>
           <Text style={styles.description}>{item.description}</Text>
         </View>
@@ -82,27 +114,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-
-  // 👇 STØRRE IKON – matcher prototypen 
   icon: {
     width: 54,
     height: 54,
     borderRadius: 10,
     marginRight: 16,
   },
-
   title: {
     fontSize: 18,
     fontWeight: "500",
     color: "#486258",
   },
+  // beskrivelse i “accordion”-modus
   descriptionContainer: {
     marginTop: 10,
-    paddingLeft: 70, // får teksten til å starte under tittel, justert for ikon
+    paddingLeft: 70,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
+    color: "#6B7A75",
+  },
+  // beskrivelse i compact-modus (vekt-linje)
+  compactDescription: {
+    marginTop: 4,
+    fontSize: 15,
     color: "#6B7A75",
   },
 });

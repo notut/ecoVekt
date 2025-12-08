@@ -1,16 +1,16 @@
 import {
-  Poppins_400Regular,
-  Poppins_700Bold,
-  useFonts,
+    Poppins_400Regular,
+    Poppins_700Bold,
+    useFonts,
 } from "@expo-google-fonts/poppins";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function Welcome() {
@@ -57,6 +57,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 40,
+    backgroundColor: 'white',
   },
   textWrapper: {
     flex: 1,

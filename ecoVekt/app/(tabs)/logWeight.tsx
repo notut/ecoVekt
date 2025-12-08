@@ -22,11 +22,13 @@ import { auth, db } from "../../firebaseConfig";
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
+  imageUrl?: string;
 };
+
 
 export default function RegistrerVekt() {
   const router = useRouter();
-  const { trashId, trashTitle } = useLocalSearchParams<RouteParams>();
+  const { trashId, trashTitle, imageUrl } = useLocalSearchParams<RouteParams>();
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
@@ -53,14 +55,14 @@ export default function RegistrerVekt() {
 
   const user = auth.currentUser;
 
-  // én registrering
   const entry = {
-    wasteId: trashId ?? null,
-    wasteTitle: trashTitle,
-    amountKg: numericWeight,
-    userId: user?.uid ?? null,
-    savedAt: new Date().toISOString(),
-  };
+  wasteId: trashId ?? null,
+  wasteTitle: trashTitle,
+  amountKg: numericWeight,
+  userId: user?.uid ?? null,
+  savedAt: new Date().toISOString(),
+  imageUrl: imageUrl ?? null,     // 👈 NYTT
+};
 
   try {
     setSaving(true);
