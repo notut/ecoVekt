@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -9,11 +10,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthSession } from "@/providers/authctx";
 import { router } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 
+//Farger tatt fra designet
 const main_green = "#5F9D84";
 const light_green = "#7EAC99";
-const dark_green = "#507C6D";
-const background_color = "#FFFFFF";
 const text_box_color = "#F8F7F5";
 const text_color = "#525252";
 
@@ -24,15 +25,12 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  // kobler opp signIn fra authentication
   const handleLogin = async () => {
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail || !password) {
+    if (!email.trim() || !password) {
       alert("Skriv inn korrekt e-post og passord");
       return;
     }
-    await signIn(trimmedEmail, password);
+    await signIn(email.trim(), password);
   };
 
   const handleRegister = () => {
@@ -40,52 +38,64 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView
+      style={styles.safe}
+      edges={["left", "right", "bottom"]}
+    >
       <View style={styles.container}>
-        {/* TOPP-FORM / HEADER */}
-        <View style={styles.topShape}>
-          <View style={styles.logoCircle}>
-            {/* Bytt ut med SVG/logo-image om du har */}
-            <Text style={styles.logoIcon}>🍃</Text>
-          </View>
-        </View>
+        {/* TOPP-BLAD */}
+        <Image
+          source={require("../../assets/images/green_leaf.png")}
+          style={styles.topLeaf}
+        />
+
+        {/* LOGO */}
+        <Image
+          source={require("../../assets/images/ecovekt_logo.png")}
+          style={styles.logo}
+        />
+
         {/* INNHOLD */}
         <View style={styles.content}>
-          {/* E-post */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Epost</Text>
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="Skriv inn epost"
+              placeholder="Epost"
               keyboardType="email-address"
               autoCapitalize="none"
               style={styles.input}
             />
           </View>
 
-          {/* Passord */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Passord</Text>
+
+            {/* Passordboks */}
             <View style={styles.passwordRow}>
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Skriv inn passord"
+                placeholder="Passord"
                 secureTextEntry={!showPassword}
                 style={[styles.input, styles.passwordInput]}
               />
+
+              {/* øyeikon */}
               <TouchableOpacity
                 style={styles.eyeButton}
-                onPress={() => setShowPassword((prev) => !prev)}
+                onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {/* Her kan du bruke f.eks. react-native-vector-icons */}
-                <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
+                <Feather
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={22}
+                  color={"#989797ff"}
+                />
               </TouchableOpacity>
+
             </View>
           </View>
 
-          {/* Logg inn knapp */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleLogin}
@@ -94,7 +104,6 @@ export const LoginScreen: React.FC = () => {
             <Text style={styles.primaryButtonText}>Logg inn</Text>
           </TouchableOpacity>
 
-          {/* Registrer deg tekst */}
           <View style={styles.registerRow}>
             <Text style={styles.registerText}>Ikke bruker? </Text>
             <TouchableOpacity onPress={handleRegister}>
@@ -102,11 +111,17 @@ export const LoginScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
         </View>
-        {/* 👈 LUKKER content */}
-        {/* BUNN-FORM – enklest som dekor-view eller bilde */}
-        <View style={styles.bottomShape} />
+
+        {/* NEDERSTE BLADER */}
+        <Image
+          source={require("../../assets/images/bottom_dark_leaf.png")}
+          style={styles.bottomDark}
+        />
+        <Image
+          source={require("../../assets/images/bottom_light_leaf.png")}
+          style={styles.bottomLight}
+        />
       </View>
-      {/* 👈 LUKKER container */}
     </SafeAreaView>
   );
 };
@@ -119,40 +134,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+    position: "relative",
   },
 
-  /* TOPP-DEL */
-  topShape: {
-    height: 220,
-    backgroundColor: main_green,
-    borderBottomRightRadius: 220,
-    justifyContent: "flex-end",
-    paddingBottom: 32,
-    paddingLeft: 24,
+  /* TOPP BLAD */
+  topLeaf: {
+    position: "absolute",
+    transform: [{ rotate: "5deg" }],
+    width: 400,
+    height: 320,
+    top: -110,
+    left: -40,
+    resizeMode: "contain",
   },
-  logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoIcon: {
-    fontSize: 32,
-    color: "#FFFFFF",
+
+  /* LOGO */
+  logo: {
+    position: "absolute",
+    width: 190.51,
+    height: 190.51,
+    top: -10,
+    left: 98,
+    resizeMode: "contain",
   },
 
   /* INNHOLD */
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 250,
+    paddingBottom: 120,
   },
 
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
@@ -161,36 +176,40 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: text_box_color,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: main_green,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     fontSize: 16,
+    color: text_color,
   },
 
+  /* Passordfelt */
   passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    position: "relative",      
+    justifyContent: "center",
   },
   passwordInput: {
-    flex: 1,
+    paddingRight: 46,          
   },
+
+  /* Øyeikonet */
   eyeButton: {
     position: "absolute",
-    right: 12,
-  },
-  eyeText: {
-    fontSize: 18,
+    right: 18,
+    top: "50%",
+    marginTop: -11,            // halv ikon-høyde (22/2)
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   primaryButton: {
-    marginTop: 16,
+    marginTop: 20,
     backgroundColor: main_green,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: 12,
+    paddingVertical: 17,
     alignItems: "center",
-    // enkel skygge/elevation
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowOffset: { width: 0, height: 4 },
@@ -198,7 +217,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   primaryButtonText: {
-    color: "text_color",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -206,41 +225,36 @@ const styles = StyleSheet.create({
   registerRow: {
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 16,
+    marginVertical: 20,
   },
   registerText: {
-    fontSize: 14,
-    color: "text_color",
+    color: text_color,
   },
   registerLink: {
-    fontSize: 14,
     color: main_green,
     fontWeight: "600",
   },
 
-  secondaryButton: {
-    backgroundColor: light_green,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  secondaryButtonText: {
-    color: "text_color",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  /* BUNN-DEL */
-  bottomShape: {
+  /* NEDRE BLADER */
+  bottomLight: {
     position: "absolute",
-    bottom: -80,
-    right: -80,
-    width: 220,
-    height: 220,
-    backgroundColor: light_green,
-    borderTopLeftRadius: 220,
+    width: 190.43,
+    height: 299.38,
+    bottom: -50,
+    right: -40,
+    resizeMode: "contain",
+    zIndex: 2,
+  },
+  bottomDark: {
+    position: "absolute",
+    width: 310,
+    height: 209.28,
+    bottom: -40,
+    right: -40,
+    resizeMode: "contain",
+    zIndex: 1,
   },
 });
 
 export default LoginScreen;
+
