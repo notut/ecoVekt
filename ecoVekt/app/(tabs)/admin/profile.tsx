@@ -23,6 +23,9 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { PieChart } from "react-native-chart-kit";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { colors } from "@/components/colors";
 
 const auth = getAuth();
 const db = getFirestore();
@@ -46,13 +49,13 @@ export default function ProfilePage(): React.ReactElement {
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
 
   const generateColors = (n: number) => {
-    const colors: string[] = [];
+    const colorsArr: string[] = [];
     const hueStep = Math.floor(360 / Math.max(1, n));
     for (let i = 0; i < n; i++) {
       const hue = (i * hueStep) % 360;
-      colors.push(`hsl(${hue}deg 60% 45%)`);
+      colorsArr.push(`hsl(${hue}deg 60% 45%)`);
     }
-    return colors;
+    return colorsArr;
   };
 
   const getAllData = async (uid: string | null) => {
@@ -83,11 +86,11 @@ export default function ProfilePage(): React.ReactElement {
 
       const types = Object.keys(totals);
       if (types.length) {
-        const colors = generateColors(types.length);
+        const generated = generateColors(types.length);
         const arr = types.map((t, i) => ({
           name: t,
           population: totals[t],
-          color: colors[i],
+          color: generated[i],
           legendFontColor: "#ffffff",
           legendFontSize: 12,
         }));
@@ -146,10 +149,20 @@ export default function ProfilePage(): React.ReactElement {
       // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
       ListHeaderComponent={() => (
         <View style={{ paddingBottom: 16 }}>
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Administrator</Text>
-          </View>
+          {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
+          <SafeAreaView style={styles.headerFull}>
+            <View style={styles.headerInner}>
+              {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
+              <Pressable onPress={() => router.back()} style={styles.backButton}>
+                <Text style={styles.backIcon}>‹</Text>
+              </Pressable>
+
+              <Text style={styles.headerTitle}>Administrator</Text>
+
+              {/* høyre side er tom (ingen profil-ikon) */}
+              <View style={styles.headerRight} />
+            </View>
+          </SafeAreaView>
 
           {/* PROFILE BOX */}
           <View style={styles.box}>
@@ -181,7 +194,7 @@ export default function ProfilePage(): React.ReactElement {
 
           <View style={{ alignItems: "center", marginBottom: 20 }}>
             {loading ? (
-              <ActivityIndicator color="#6B8F71" />
+              <ActivityIndicator color={colors.mainGreen} />
             ) : chartData.length ? (
               <View style={{ width: screenWidth, alignItems: "center" }}>
                 <PieChart
@@ -213,7 +226,7 @@ export default function ProfilePage(): React.ReactElement {
         </View>
       )}
 
-      // renderItem viser hvert trash-element (samme som før)
+      // renderItem viser hvert trash-element
       renderItem={({ item }) => (
         <View style={styles.listCard}>
           <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
@@ -222,6 +235,7 @@ export default function ProfilePage(): React.ReactElement {
         </View>
       )}
 
+      
       ListFooterComponent={() => (
         <View style={{ paddingTop: 20 }}>
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
@@ -237,12 +251,45 @@ export default function ProfilePage(): React.ReactElement {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F6F5",
+    backgroundColor: colors.background,
     paddingHorizontal: 14,
   },
 
+  //Header som dekker hele toppen 
+  headerFull: {
+    width: "100%",
+    backgroundColor: colors.mainGreen,
+  },
+  headerInner: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    position: "absolute",
+    left: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+  backIcon: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "600",
+  },
+  headerRight: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    width: 28,
+  },
+
   header: {
-    backgroundColor: "#7EA08F",
+    backgroundColor: colors.lightGreen,
     paddingVertical: 22,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -250,13 +297,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   headerTitle: {
-    color: "#2F3E36",
+    color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "700",
   },
 
   box: {
-    backgroundColor: "white",
+    backgroundColor: colors.textBox,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
@@ -266,7 +313,7 @@ const styles = StyleSheet.create({
   boxTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#2F3E36",
+    color: colors.text,
     marginBottom: 12,
   },
   infoBox: {
@@ -276,7 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   label: {
-    color: "#4A5C54",
+    color: colors.text,
     paddingVertical: 4,
   },
 
@@ -285,10 +332,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#2F3E36",
     marginBottom: 10,
+    marginLeft: "3%",
   },
   subText: {
     color: "#6B7A75",
     marginBottom: 16,
+    marginLeft: "3%",
   },
 
   chipContainer: {
@@ -296,11 +345,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
     marginBottom: 12,
+    marginLeft: "3%",
   },
 
   chip: {
     borderWidth: 1,
-    borderColor: "#5E7C6B",
+    borderColor: colors.mainGreen,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 22,
@@ -311,9 +361,10 @@ const styles = StyleSheet.create({
 
   linkButton: {
     marginBottom: 26,
+    marginLeft: "3%",
   },
   linkText: {
-    color: "#5E7C6B",
+    color: colors.darkGreen,
     textDecorationLine: "underline",
     fontSize: 15,
     fontWeight: "500",
@@ -326,13 +377,13 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    marginTop: -50,
+    marginTop: -60,
   },
   tooltipText: {
     color: "#2F3E36",
     textAlign: "center",
     fontSize: 14,
-    width: 230,
+    width: 250,
   },
 
   noData: {
@@ -353,20 +404,23 @@ const styles = StyleSheet.create({
   },
   listText: {
     marginTop: 6,
-    color: "#4A5C54",
+    color: colors.text,
   },
 
   logoutButton: {
-    backgroundColor: "#6B8F71",
-    paddingVertical: 14,
+    backgroundColor: colors.mainGreen,
+    paddingVertical: 17,
     marginTop: 20,
-    borderRadius: 50,
+    borderRadius:20,
     marginBottom: 40,
+    alignSelf: "center",
+    width: "70%",
   },
   logoutText: {
     textAlign: "center",
     color: "white",
     fontWeight: "700",
     fontSize: 16,
+
   },
 });
