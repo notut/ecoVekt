@@ -122,6 +122,10 @@ export default function AuthenticationScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <View style={styles.container}>
+        {/* NEDERSTE BLADER */}
+        <View style={styles.leaves}>
+          <BottomLeaves />
+        </View>
         {/* TOPP-BLAD */}
         <TopLeaf />
 
@@ -228,9 +232,6 @@ export default function AuthenticationScreen() {
             </View>
           </View>
         </ScrollView>
-
-        {/* NEDERSTE BLADER */}
-        <BottomLeaves />
       </View>
     </SafeAreaView>
   );
@@ -246,11 +247,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     position: "relative",
   },
+  leaves: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
+    opacity: 0.6,
+  },
   scrollContent: {
     flexGrow: 1,
   },
-
-  /* LOGO */
   logo: {
     position: "absolute",
     width: 190.51,
@@ -259,8 +266,6 @@ const styles = StyleSheet.create({
     left: 98,
     resizeMode: "contain",
   },
-
-  /* INNHOLD */
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -293,6 +298,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 3,
+    zIndex: 2,
   },
   primaryButtonText: {
     color: "#FFFFFF",
@@ -309,8 +315,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   registerLink: {
-    color: colors.mainGreen,
+    color: colors.darkGreen,
     fontWeight: "600",
+    zIndex: 5,
   },
 
   errorText: {
