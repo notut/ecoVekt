@@ -7,11 +7,13 @@ import {
   Text,
   View,
 } from "react-native";
-// 🔑 IMPORT: useFocusEffect må importeres fra "expo-router" (eller "@react-navigation/native")
+
 import { StepProgress } from "@/components/stepProgress";
 import WasteCard from "@/components/wasteCard";
 import { useFocusEffect, useRouter } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
+// 🔑 IMPORT: Importer Header komponentet
+import { Header } from "@/components/header";
 
 type TrashType = {
   id: string;
@@ -33,13 +35,11 @@ export default function ChooseWaste() {
   // 🔹 Stegene i prosessen – denne siden er alltid steg 1
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  // 🔑 LØSNING: Bruk useFocusEffect i stedet for useEffect (med tom avhengighetsliste)
-  // Dette sikrer at data hentes hver gang skjermen blir synlig/fokusert
   useFocusEffect(
     useCallback(() => {
       const fetchTrashTypes = async () => {
-        setLoading(true); // Viser lasteindikator
-        setError(null); // Nullstill feilmelding
+        setLoading(true); 
+        setError(null); 
 
         try {
           const user = auth.currentUser;
@@ -92,9 +92,10 @@ export default function ChooseWaste() {
       fetchTrashTypes();
 
       // Valgfri cleanup-funksjon (kjører når skjermen mister fokus)
+      
       return () => {};
     }, [])
-  ); // Tomt dependency-array sikrer at useCallback-funksjonen lages bare én gang
+  ); 
 
   const handleSelect = (item: TrashType) => {
     router.push({
@@ -122,13 +123,27 @@ export default function ChooseWaste() {
     );
   }
 
-  // 🔹 HOVED-RENDER – KUN ÉN return HER
+  // 🔹 HOVED-RENDER 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Velg avfall</Text>
-      </View>
+      {/* 🔑 FIX: Bruk den delte Header komponenten for å sikre centering og safe area håndtering */}
+      <Header
+        title="Velg avfall"
+        // Vi trenger ikke onBackPress her da dette er steg 1
+        // Vi trenger heller ikke onProfilePress her i følge designet
+        containerStyle={{
+            height: 80, // Sett total høyde
+            backgroundColor: PRIMARY, // Sett riktig farge
+            paddingHorizontal: 20,
+            paddingLeft: 10,
+        }}
+        titleStyle={{
+            fontSize: 20,
+            // Fjern alle alignment/margin overrides for å sikre centering
+            fontWeight: "600",
+            color: "#FFFFFF",
+        }}
+      />
 
       {/* STEG-INDIKATOR */}
       <View style={styles.stepWrapper}>
@@ -151,7 +166,7 @@ export default function ChooseWaste() {
                 params: {
                   trashId: selected.id,
                   trashTitle: selected.title,
-                  imageUrl: selected.imageUrl ?? "", // 👈 NY
+                  imageUrl: selected.imageUrl ?? "",   
                 },
               });
             }}
@@ -171,6 +186,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  // FIX: Fjern den gamle, manuelle header stilen
+  /*
   header: {
     backgroundColor: PRIMARY,
     paddingHorizontal: 20,
@@ -182,6 +199,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
   },
+  */
   list: {
     flex: 1,
     paddingHorizontal: 16,
@@ -194,8 +212,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   stepWrapper: {
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 8, // lite mellomrom under
-  },
+  alignItems: "center",
+  marginTop: 12,
+  marginBottom: 8, 
+},
 });

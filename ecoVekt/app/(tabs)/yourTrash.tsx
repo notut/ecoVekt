@@ -1,24 +1,26 @@
 // app/(tabs)/yourTrash.tsx
 
-import React, { useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  Alert,
+  View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { Swipeable } from "react-native-gesture-handler";
 
-import { auth, db } from "../../firebaseConfig";
-import WasteCard from "@/components/wasteCard";
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress";
+import WasteCard from "@/components/wasteCard";
+import { MaterialIcons } from "@expo/vector-icons";
+import { auth, db } from "../../firebaseConfig";
 
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
@@ -30,7 +32,7 @@ type LocalEntry = {
   amountKg: number;
   userId?: string | null;
   savedAt?: string;
-  imageUrl?: string | null; // 👈 NYTT
+  imageUrl?: string | null;
 };
 
 type AggregatedEntry = {
@@ -39,7 +41,7 @@ type AggregatedEntry = {
   wasteTitle: string;
   totalKg: number;
   count: number;
-  imageUrl?: string | null; // 👈 NYTT
+  imageUrl?: string | null;
 };
 
 export default function YourTrash() {
@@ -51,6 +53,39 @@ export default function YourTrash() {
 
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
+  // Bygger samme nøkkel som i aggregasjonen
+  const buildKey = (e: LocalEntry) => {
+    const title = e.wasteTitle ?? "Ukjent avfallstype";
+    const idPart = e.wasteId ?? "no-id";
+    return `${idPart}__${title}`;
+  };
+
+  const recomputeAggregated = (list: LocalEntry[]) => {
+    const map: Record<string, AggregatedEntry> = {};
+
+    list.forEach((e) => {
+      const title = e.wasteTitle ?? "Ukjent avfallstype";
+      const idPart = e.wasteId ?? "no-id";
+      const key = `${idPart}__${title}`;
+
+      if (!map[key]) {
+        map[key] = {
+          key,
+          wasteId: e.wasteId ?? null,
+          wasteTitle: title,
+          totalKg: 0,
+          count: 0,
+          imageUrl: e.imageUrl ?? null,
+        };
+      }
+
+      map[key].totalKg += e.amountKg;
+      map[key].count += 1;
+    });
+
+    return Object.values(map);
+  };
+
   // Hent og aggreger lokale registreringer hver gang skjermen får fokus
   const fetchPending = useCallback(async () => {
     try {
@@ -60,31 +95,7 @@ export default function YourTrash() {
       const list: LocalEntry[] = raw ? JSON.parse(raw) : [];
 
       setEntries(list);
-
-      // Aggreger per avfallstype (bruk id + tittel som nøkkel)
-      const map: Record<string, AggregatedEntry> = {};
-
-      list.forEach((e) => {
-        const title = e.wasteTitle ?? "Ukjent avfallstype";
-        const idPart = e.wasteId ?? "no-id";
-        const key = `${idPart}__${title}`;
-
-        if (!map[key]) {
-          map[key] = {
-            key,
-            wasteId: e.wasteId ?? null,
-            wasteTitle: title,
-            totalKg: 0,
-            count: 0,
-            imageUrl: e.imageUrl ?? null, // 👈 lagre første ikon vi ser
-          };
-        }
-
-        map[key].totalKg += e.amountKg;
-        map[key].count += 1;
-      });
-
-      setAggregated(Object.values(map));
+      setAggregated(recomputeAggregated(list));
     } catch (err) {
       console.error("Feil ved lesing av pendingWasteEntries:", err);
       setEntries([]);
@@ -99,6 +110,25 @@ export default function YourTrash() {
       fetchPending();
     }, [fetchPending])
   );
+
+  // Slett én aggregert type (alle registreringer for den typen)
+  const handleDelete = async (key: string) => {
+    // Filtrer bort alle entries som matcher denne aggregated-keyen
+    const newEntries = entries.filter((e) => buildKey(e) !== key);
+    const newAggregated = recomputeAggregated(newEntries);
+
+    setEntries(newEntries);
+    setAggregated(newAggregated);
+
+    if (newEntries.length === 0) {
+      await AsyncStorage.removeItem("pendingWasteEntries");
+    } else {
+      await AsyncStorage.setItem(
+        "pendingWasteEntries",
+        JSON.stringify(newEntries)
+      );
+    }
+  };
 
   // Fullfør: send alle summerte registreringer til Firestore, tøm localstorage og state
   const handleFullfor = async () => {
@@ -153,19 +183,16 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.back()}
-        onProfilePress={() => {}}
+        onBackPress={() => router.push("/(tabs)/logWeight")}
+        // 🔑 Linked profile navigation
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
           height: 80,
-          justifyContent: "flex-start",
           overflow: "hidden",
           paddingLeft: 10,
         }}
         titleStyle={{
           fontSize: 20,
-          marginTop: 40,
-          textAlign: "left",
-          alignSelf: "flex-start",
           color: "#FFFFFF",
           fontWeight: "600",
         }}
@@ -186,19 +213,32 @@ export default function YourTrash() {
           </Text>
         ) : (
           aggregated.map((item) => (
-            <WasteCard
+            <Swipeable
               key={item.key}
-              item={{
-                title: item.wasteTitle,
-                description:
-                  item.count > 1
-                    ? `${item.totalKg} kg ( ${item.count} registreringer )`
-                    : `${item.totalKg} kg`,
-                imageUrl: item.imageUrl ?? null, // hvis du senere legger til imageUrl i localstorage
-              }}
-              onSelect={() => {}}
-              compact
-            />
+              renderRightActions={() => (
+                <View style={styles.deleteContainer}>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDelete(item.key)}
+                  >
+                        <MaterialIcons name="delete" size={32} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            >
+              <WasteCard
+                item={{
+                  title: item.wasteTitle,
+                  description:
+                    item.count > 1
+                      ? `${item.totalKg} kg ( ${item.count} registreringer )`
+                      : `${item.totalKg} kg`,
+                  imageUrl: item.imageUrl ?? null,
+                }}
+                onSelect={() => {}}
+                compact
+              />
+            </Swipeable>
           ))
         )}
 
@@ -285,5 +325,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: "#FFF",
+  },
+  deleteContainer: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginBottom: 16,
+  },
+  deleteButton: {
+    backgroundColor: "#D9534F",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 90,
+    height: 75,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    marginLeft: 8,
+    paddingHorizontal: 8,
+  },
+  deleteText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
