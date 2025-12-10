@@ -12,48 +12,48 @@ import {
     ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-// 1. Import Poppins fonts and useFonts
+// 💡 1. Import useRouter from expo-router
 import {
-    Poppins_600SemiBold, // Commonly used for headers
+    Poppins_600SemiBold,
     useFonts,
 } from "@expo-google-fonts/poppins";
+import { useRouter } from "expo-router";
 
 type HeaderProps  = {
     title: string;
     onBackPress?: () => void;
-    onProfilePress?: () => void;
+    onProfilePress?: () => void; // This prop still takes precedence
     containerStyle?: ViewStyle;
     titleStyle?: TextStyle;
 };
 
-const HEADER_BG = colors.mainGreen; 
-const ICON_COLOR = colors.background; 
+const HEADER_BG = colors.mainGreen;
+const ICON_COLOR = colors.background;
 const FONT_FAMILY_BOLD = "Poppins_600SemiBold";
 
 export const Header: React.FC<HeaderProps> = ({
-    title, 
+    title,
     onBackPress,
     onProfilePress,
     containerStyle,
     titleStyle,
 }) => {
     const insets = useSafeAreaInsets();
-    
-    // 2. Load the Poppins font
+    // 💡 2. Initialize useRouter
+    const router = useRouter();
+
     const [fontsLoaded] = useFonts({
         Poppins_600SemiBold,
     });
 
-    // 3. Font Loading: Show a loading state if fonts are not loaded
     if (!fontsLoaded) {
         return (
             <View style={[styles.root, { backgroundColor: HEADER_BG, height: 80 + insets.top, justifyContent: 'center', alignItems: 'center' }]}>
-                <StatusBar 
+                <StatusBar
                     translucent
                     backgroundColor="transparent"
                     barStyle="light-content"
                 />
-                {/* Optional: Show a loading indicator in the header area */}
                 <ActivityIndicator size="small" color={ICON_COLOR} />
             </View>
         );
@@ -69,13 +69,18 @@ export const Header: React.FC<HeaderProps> = ({
             <Ionicons name="chevron-back" size={24} color={ICON_COLOR} />
         </Pressable>
     ) : (
-        // Placeholder to balance the layout if the back button is missing
         <View style={styles.iconPlaceholder} />
     );
 
-    const ProfileIcon = onProfilePress ? (
+    // 💡 3. Updated ProfileIcon handler to use onProfilePress if provided,
+    //    or default to navigating to /profile if onProfilePress is missing.
+    const handleProfilePress = onProfilePress 
+        ? onProfilePress 
+        : () => router.push("/(tabs)/admin/profile"); // Default link logic
+
+    const ProfileIcon = (
         <Pressable
-            onPress={onProfilePress}
+            onPress={handleProfilePress} // Use the consolidated handler
             style={styles.profileButton}
             hitSlop={10}
         >
@@ -83,21 +88,18 @@ export const Header: React.FC<HeaderProps> = ({
                 <Ionicons name="person" size={20} color={ICON_COLOR} />
             </View>
         </Pressable>
-    ) : (
-        // Placeholder to balance the layout if the profile button is missing
-        <View style={styles.iconPlaceholder} />
     );
+    // Note: Removed the placeholder logic for ProfileIcon to ensure it's always present and linked
 
     return (
         <View style={[styles.root, { backgroundColor: HEADER_BG }]}>
-            {/* Gjør statusbaren gjennomsiktig slik at headeren legger seg bak kamera */}
-            <StatusBar 
+            <StatusBar
                 translucent
                 backgroundColor="transparent"
                 barStyle="light-content"
             />
 
-            <View 
+            <View
                 style={[
                     styles.headerContainer,
                     { paddingTop: insets.top },
@@ -108,19 +110,19 @@ export const Header: React.FC<HeaderProps> = ({
                 {BackButton}
 
                 {/* Midten: tittel (flex: 1 and textAlign: 'center' ensures centering) */}
-                <Text 
+                <Text
                     style={[
-                        styles.title, 
-                        titleStyle, 
+                        styles.title,
+                        titleStyle,
                         // Ensure text alignment is center unless explicitly overridden
-                        { textAlign: titleStyle?.textAlign === undefined ? 'center' : titleStyle.textAlign } 
-                    ]} 
+                        { textAlign: titleStyle?.textAlign === undefined ? 'center' : titleStyle.textAlign }
+                    ]}
                     numberOfLines={1}
                 >
                     {title}
                 </Text>
 
-                {/* Høyre: profil ikon eller placeholder */}
+                {/* Høyre: profil ikon */}
                 {ProfileIcon}
             </View>
         </View>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
       alignItems: "flex-start",
     },
     // Must match iconButton/profileButton width for centering
-    iconPlaceholder: { 
+    iconPlaceholder: {
         width: 32,
         height: 32,
     },
@@ -154,9 +156,9 @@ const styles = StyleSheet.create({
       textAlign: "center", // CRITICAL for inner centering
       fontSize: 24,
       // 4. Apply the Poppins font family
-      fontFamily: FONT_FAMILY_BOLD, 
+      fontFamily: FONT_FAMILY_BOLD,
       // Removed fontWeight: "600" as the font family handles the weight
-      color: ICON_COLOR, 
+      color: ICON_COLOR,
     },
     profileButton: {
       width: 32,
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
       height: 32,
       borderRadius: 16,
       borderWidth: 2,
-      borderColor: ICON_COLOR, 
+      borderColor: ICON_COLOR,
       justifyContent: "center",
       alignItems: "center",
     },
