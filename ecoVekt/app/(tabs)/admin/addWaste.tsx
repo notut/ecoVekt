@@ -21,6 +21,8 @@ import {
   setDoc
 } from "firebase/firestore";
 
+import { Feather } from "@expo/vector-icons";
+
 type WasteType = {
   id: string;
   title: string;
@@ -114,7 +116,7 @@ export default function AddWasteScreen(): React.ReactElement {
   const handleSave = async () => {
     if (!userUid) {
       // send til login
-      router.replace("/(tabs)/admin/profile");
+      router.replace("./profile");
       return;
     }
 
@@ -130,7 +132,7 @@ export default function AddWasteScreen(): React.ReactElement {
         { merge: true }
       );
       // gå tilbake til profil 
-      router.replace("/(tabs)/admin/profile");
+      router.replace("./profile");
     } catch (e) {
       console.error("Feil ved lagring av selectedWaste:", e);
       alert("Kunne ikke lagre — prøv igjen.");
@@ -139,17 +141,18 @@ export default function AddWasteScreen(): React.ReactElement {
     }
   };
 
-  const screenWidth = Dimensions.get("window").width;
-
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>Tilbake</Text>
-        </Pressable>
+        <View style={{ width: 40 }} /> 
+
         <Text style={styles.title}>Legg til avfallstyper</Text>
-        <View style={{ width: 60 }} />
+
+        <Pressable onPress={() => router.replace("./profile")} style={styles.backButton}>
+          <Feather name="x" size={26} color="#2f6f5b" />
+        </Pressable>
       </View>
+
 
       <View style={styles.container}>
         {loading || !userUid ? ( // Legger til sjekk på userUid her
@@ -223,7 +226,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   backButton: { paddingVertical: 8, paddingHorizontal: 6 },
-  backText: { color: "#2f6f5b", fontWeight: "600" },
   title: { fontSize: 18, fontWeight: "700", color: "#2f6f5b" },
 
   container: { flex: 1, padding: 16 },
@@ -232,9 +234,15 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingBottom: 24 },
 
-  instructions: { color: "#334155", marginBottom: 12 },
+  instructions: { color: "#334155", marginBottom: 34 },
 
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chipsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",   
+  },
+
   chip: {
     borderRadius: 20,
     borderWidth: 1,
