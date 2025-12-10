@@ -49,7 +49,14 @@ export default function ProfilePage(): React.ReactElement {
   const [selectedWaste, setSelectedWaste] = useState<string[]>([]); // brukervalgt avfallstyper
   const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null); // valgt slice i diagram
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser); // aktiv bruker
-
+  const [profile, setProfile] = useState<{
+    fullName?: string;
+    companyName?: string;
+    employeeNumber?: string;
+    email?: string;
+  } | null>(null); // brukerprofil
+  const [profileLoading, setProfileLoading] = useState<boolean>(false); // loader for profil
+  const [profileError, setProfileError] = useState<string | null>(null); // feil ved henting av profil
   
   // basert på norske sorteringsfarger 
   const wasteColorMap: Record<string, string> = {
@@ -243,6 +250,42 @@ export default function ProfilePage(): React.ReactElement {
   }
 };
 
+const fetchUserProfile = async (uid?: string | null) => {
+  if (!uid){
+    setProfile(null);
+    setProfileError("Ingen bruker logget inn.");
+    return;
+  }
+
+  setProfileLoading(true);
+  setProfileError(null);
+
+  try {
+    const userDocRef = doc(db, "users", uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      const data = userSnap.data() as any;
+      setProfile({
+        fullName: data.name ?? data.fullName ?? "",
+        companyName: data.companyName ?? data.company ?? "",
+        employeeNumber: data.employeeNumber ?? data.employeeNr ?? "",
+        email: data.email ?? auth.currentUser?.email ?? "",
+      });
+    } else {
+      setProfile({
+        fullName: "",
+        companyName: "",
+        employeeNumber: "",
+        email: auth.currentUser?.email ?? "",
+      });
+    }
+  } catch (e) {
+    console.error("Kunne ikke hente brukerprofil:", e);
+    setProfileError("Feil ved henting av profil.");
+  } finally {
+    setProfileLoading(false);
+  }
+      };
 
   // Henter brukerens valgte avfallstyper fra users/{uid}.selectedWaste 
   const fetchSelectedWaste = async () => {
@@ -266,6 +309,7 @@ export default function ProfilePage(): React.ReactElement {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u);
       getAllData(u ? u.uid : null);
+      fetchUserProfile(u ? u.uid : null);
     });
     return () => unsub();
   }, []);
@@ -275,6 +319,7 @@ export default function ProfilePage(): React.ReactElement {
     useCallback(() => {
       fetchSelectedWaste();
       getAllData(currentUser?.uid ?? null);
+      fetchUserProfile(currentUser?.uid ?? null);
     }, [currentUser?.uid])
   );
 
@@ -313,11 +358,26 @@ export default function ProfilePage(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
         <View style={styles.box}>
-          <Text style={styles.boxTitle}>Profil</Text>
+          <Text style={styles.boxTitle}>Din profil</Text>
           <View style={styles.infoBox}>
-            <Text style={styles.label}>Bedrift:</Text>
-            <Text style={styles.label}>Ansattnummer:</Text>
-            <Text style={styles.label}>Email:</Text>
+            {profileLoading ? (
+              <ActivityIndicator color={colors.mainGreen} />
+            ) : profileError ? (
+              <Text style={{ color: "red" }}>{profileError}</Text>
+            ) : profile ? (
+              <>
+                <Text style={styles.label}>Navn: {profile.fullName || "Ikke satt"}</Text>
+                <Text style={styles.label}>
+                  Firma: {profile.companyName || "Ikke satt"}
+                </Text>
+                <Text style={styles.label}>
+                  Ansatt-ID: {profile.employeeNumber || "Ikke satt"}
+                </Text>
+                <Text style={styles.label}>E-post: {profile.email || "Ikke satt"}</Text>
+              </>
+            ) : (
+              <Text>Ingen profildata tilgjengelig.</Text>
+            )}
           </View>
         </View>
 
