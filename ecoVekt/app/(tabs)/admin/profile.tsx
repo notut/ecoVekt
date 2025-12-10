@@ -353,7 +353,7 @@ export default function ProfilePage(): React.ReactElement {
       <View style={styles.header}>
         <Pressable
           style={styles.headerLeft}
-          onPress={() => router.push("/(tabs)/chooseWaste")}
+          onPress={() => router.back()}
         >
           <Text style={styles.backText}>‹</Text>
         </Pressable>
