@@ -1,4 +1,4 @@
-/*import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -315,7 +315,7 @@ export default function ProfilePage(): React.ReactElement {
 
   return (
     <View style={styles.container}>
-      {/* Header *//*}
+      {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.headerLeft} onPress={() => router.push("/(tabs)/chooseWaste")}>
           <Text style={styles.backText}>‹</Text>
@@ -328,9 +328,9 @@ export default function ProfilePage(): React.ReactElement {
         <View style={styles.headerRight} />
       </View>
 
-      {/* Hoved-innhold i ScrollView *//*}
+      {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* Profil-boks *//*}
+        {/* Profil-boks */}
         <View style={[styles.box, { borderColor: colors.textBox, backgroundColor: colors.background }]}>
           <Text style={styles.boxTitle}>Din profil</Text>
 
@@ -367,7 +367,7 @@ export default function ProfilePage(): React.ReactElement {
           </View>
         </View>
 
-        {/* Valgt avfall *//*}
+        {/* Valgt avfall */}
         <Text style={styles.sectionTitle}>Valgt avfall</Text>
         <View style={styles.chipRow}>
           {selectedWaste.length === 0 ? (
@@ -381,12 +381,12 @@ export default function ProfilePage(): React.ReactElement {
           )}
         </View>
 
-        {/* Link for å legge til flere avfallstyper *//*}
+        {/* Link for å legge til flere avfallstyper */}
         <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
           <Text style={styles.linkText}>Legg til mer</Text>
         </Pressable>
 
-        {/* Diagramseksjon *//*}
+        {/* Diagramseksjon */}
         <Text style={styles.sectionTitle}>Total mengde avfall</Text>
         <Text style={styles.subText}>Siste 4 uker</Text>
 
@@ -440,7 +440,7 @@ export default function ProfilePage(): React.ReactElement {
           )}
         </View>
 
-        {/* Logout-knapp *//*}
+        {/* Logout-knapp */}
         <View style={styles.logoutWrap}>
           <Pressable
             style={[styles.logoutButton, { backgroundColor: colors.mainGreen }]}
@@ -453,7 +453,7 @@ export default function ProfilePage(): React.ReactElement {
     </View>
   );
 }
-/*
+
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -611,4 +611,4 @@ const styles = StyleSheet.create({
   hintText: {
     color: "#64748b",
   },
-});*/ 
+});
