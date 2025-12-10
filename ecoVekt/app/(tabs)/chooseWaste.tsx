@@ -33,11 +33,7 @@ export default function ChooseWaste() {
   const router = useRouter();
 
   // 🔹 Stegene i prosessen – denne siden er alltid steg 1
-  const steps = [
-  { id: 1 },
-  { id: 2 },
-  { id: 3 },
-];
+  const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
   useFocusEffect(
     useCallback(() => {
@@ -85,13 +81,17 @@ export default function ChooseWaste() {
           setTrashTypes(types);
         } catch (err) {
           console.error("Error fetching trash types:", err);
-          setError("Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk.");
+          setError(
+            "Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk."
+          );
         } finally {
           setLoading(false);
         }
       };
 
       fetchTrashTypes();
+
+      // Valgfri cleanup-funksjon (kjører når skjermen mister fokus)
       
       return () => {};
     }, [])

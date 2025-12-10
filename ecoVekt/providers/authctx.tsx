@@ -16,8 +16,8 @@ import {
   useState,
 } from "react";
 
-// logikk for logging
 
+// logikk for logging
 type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
