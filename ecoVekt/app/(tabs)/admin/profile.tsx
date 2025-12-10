@@ -3,6 +3,7 @@ import {
   View,
   Text,
   Pressable,
+  FlatList,
   Dimensions,
   StyleSheet,
   ActivityIndicator,
@@ -21,16 +22,12 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { PieChart } from "react-native-chart-kit";
-//import { SafeAreaView } from "react-native-safe-area-context";
-
 import Svg, { G, Path } from "react-native-svg";
 import { colors } from "@/components/colors";
 
 const auth = getAuth();
 const db = getFirestore();
 
-// Type for ett avfalls-element 
 type TrashItemType = {
   id: string;
   weight: number;
@@ -39,124 +36,29 @@ type TrashItemType = {
 };
 
 export default function ProfilePage(): React.ReactElement {
-  const { signOut } = useAuthSession(); // logout-funksjon fra context
-  const router = useRouter(); // navigator
+  const { signOut } = useAuthSession();
+  const router = useRouter();
 
-  // Lokale state-variabler 
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [chartData, setChartData] = useState<
-    { name: string; population: number; color: string }[]
-  >([]);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [tooltipText, setTooltipText] = useState<string>("");
   const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
-  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
-  const [profile, setProfile] = useState<{
-    fullName?: string;
-    companyName?: string;
-    employeeNumber?: string;
-    email?: string;
-  } | null>(null);
-  const [profileLoading, setProfileLoading] = useState<boolean>(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // basert på norske sorteringsfarger 
-  const wasteColorMap: Record<string, string> = {
-    mat: "#01A04C",            
-    plast: "#921E80",        
-    papir: "#0082BE",         
-    glass: "#01C3A7",         
-    metall: "#5A6E77",       
-    farlig: "#E11D48",       
-    rest: "#2E2E2E",          
-
-    tekstil: "#A78BFA",        
-    trevirke: "#A0703A",     
-    porselen: "#8B8F90",       
-    gips: "#6B7A75",
-    isolasjon: "#6B8F71",
-    glassMetall: "#01C3A7",
-    isopor: "#921E80",
-    elektronikk: "#fba910",
-    batteri: "#E11D48",
-    lyspærer: "#E11D48",
-    medisinsk: "#ede900",
-    radioaktivt: "#f7ff04",
-    gummi: "#6B7A75",
-    hageavfall: "#01A04C",
-    matavfall: "#01A04C",
-    restavfall: "#2E2E2E",
-
-    default: colors.mainGreen,
-  };
-
-  const colorForWasteType = (type?: string | null): string => {
-    if (!type) return wasteColorMap["rest"];
-    const t = type.toLowerCase().trim();
-
-    switch (t) {
-      case "batteri": return wasteColorMap["batteri"];
-      case "elektronikk": return wasteColorMap["elektronikk"];
-      case "farlig avfall": return wasteColorMap["farlig"];
-      case "gips": return wasteColorMap["gips"];
-      case "glass og metall": return wasteColorMap["glassMetall"];
-      case "gummi": return wasteColorMap["gummi"];
-      case "hageavfall": return wasteColorMap["hageavfall"];
-      case "isolasjon": return wasteColorMap["isolasjon"];
-      case "isopor": return wasteColorMap["isopor"];
-      case "klær og tekstil": return wasteColorMap["tekstil"];
-      case "lyspærer og lysrør": return wasteColorMap["lyspærer"];
-      case "matavfall": return wasteColorMap["matavfall"];
-      case "medisinsk avfall": return wasteColorMap["medisinsk"];
-      case "papp og papir": return wasteColorMap["papir"];
-      case "plastemballasje": return wasteColorMap["plast"];
-      case "porselen og keramikk": return wasteColorMap["porselen"];
-      case "radioaktivt avfall": return wasteColorMap["radioaktivt"];
-      case "restavfall": return wasteColorMap["restavfall"];
-      case "trevirke": return wasteColorMap["trevirke"];
+  const generateColors = (n: number) => {
+    const colorsArr: string[] = [];
+    const hueStep = Math.floor(360 / Math.max(1, n));
+    for (let i = 0; i < n; i++) {
+      const hue = (i * hueStep) % 360;
+      colorsArr.push(`hsl(${hue}deg 60% 45%)`);
     }
-
-    if (t.includes("mat") || t.includes("bio") || t.includes("organisk")) return wasteColorMap["mat"];
-    if (t.includes("plast") || t.includes("isopor")) return wasteColorMap["plast"];
-    if (t.includes("papir") || t.includes("papp") || t.includes("kartong")) return wasteColorMap["papir"];
-    if (t.includes("glass")) return wasteColorMap["glass"];
-    if (t.includes("metall") || t.includes("metal")) return wasteColorMap["metall"];
-    if (
-      t.includes("farlig") ||
-      t.includes("kjemisk") ||
-      t.includes("batteri") ||
-      t.includes("elektronikk") ||
-      t.includes("lyspære")
-    ) return wasteColorMap["farlig"];
-    if (t.includes("tekstil") || t.includes("klær")) return wasteColorMap["tekstil"];
-    if (t.includes("tre") || t.includes("virke")) return wasteColorMap["trevirke"];
-    if (t.includes("porsel") || t.includes("keramikk")) return wasteColorMap["porselen"];
-    if (t.includes("hage")) return wasteColorMap["hageavfall"];
-    if (t.includes("medisinsk")) return wasteColorMap["medisinsk"];
-    if (t.includes("radio")) return wasteColorMap["radioaktivt"];
-
-    return wasteColorMap["default"];
-  };
-
-  const createArcPath = (radius: number, startAngle: number, endAngle: number) => {
-    const polar = (angle: number) => ({
-      x: radius * Math.cos((angle * Math.PI) / 180),
-      y: radius * Math.sin((angle * Math.PI) / 180),
-    });
-    const start = polar(startAngle);
-    const end = polar(endAngle);
-    const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
-    return `M 0 0 L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+    return colorsArr;
   };
 
   const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      const yourTrashCol = collection(db, "yourTrash");
-      const q = uid
-        ? query(yourTrashCol, where("uid", "==", uid))
-        : query(yourTrashCol);
       if (!uid) {
         setTrashItems([]);
         setChartData([]);
@@ -171,31 +73,11 @@ export default function ProfilePage(): React.ReactElement {
       const results: TrashItemType[] = [];
       snap.forEach((docSnap) => {
         const d = docSnap.data() as any;
-        const weight = Number(d.amountKg ?? d.amount ?? d.weight ?? 0);
-
-        let createdAt: any = null;
-        if (d.timestamp && typeof d.timestamp.toDate === "function") {
-          createdAt = d.timestamp.toDate();
-        } else if (d.savedAt && typeof d.savedAt === "string") {
-          createdAt = new Date(d.savedAt);
-        } else {
-          createdAt = d.createdAt ?? null;
-        }
-
-        const type =
-          typeof d.wasteTitle === "string"
-            ? d.wasteTitle
-            : typeof d.type === "string"
-            ? d.type
-            : typeof d.wasteName === "string"
-            ? d.wasteName
-            : "Ukjent";
-
         results.push({
           id: docSnap.id,
-          weight,
-          createdAt,
-          type,
+          weight: d.weight || 0,
+          createdAt: d.createdAt ?? null,
+          type: d.type,
         });
       });
 
@@ -204,21 +86,22 @@ export default function ProfilePage(): React.ReactElement {
       const totals: Record<string, number> = {};
       results.forEach((r) => {
         const t = r.type ?? "Ukjent";
-        totals[t] = (totals[t] || 0) + (Number(r.weight) || 0);
+        totals[t] = (totals[t] || 0) + r.weight;
       });
 
-      const types = Object.keys(totals).filter((k) => totals[k] > 0);
-      if (types.length > 0) {
-        const arr = types.map((t) => ({
+      const types = Object.keys(totals);
+      if (types.length) {
+        const generated = generateColors(types.length);
+        const arr = types.map((t, i) => ({
           name: t,
           population: totals[t],
-          color: colorForWasteType(t),
+          color: generated[i],
+          legendFontColor: "#ffffff",
+          legendFontSize: 12,
         }));
         setChartData(arr);
 
-        const defaultPick = types.includes("Restavfall")
-          ? "Restavfall"
-          : types[0];
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
         const total = totals[defaultPick] ?? 0;
         setTooltipText(
           `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
@@ -227,66 +110,19 @@ export default function ProfilePage(): React.ReactElement {
         setChartData([]);
         setTooltipText("");
       }
-    } catch (e) {
-      console.error("Feil ved henting av waste:", e);
-      setTrashItems([]);
-      setChartData([]);
-      setTooltipText("");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUserProfile = async (uid?: string | null) => {
-    if (!uid) {
-      setProfile(null);
-      setProfileError("Ingen bruker logget inn.");
-      return;
-    }
-
-    setProfileLoading(true);
-    setProfileError(null);
-
-    try {
-      const userDocRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        const data = userSnap.data() as any;
-        setProfile({
-          fullName: data.name ?? data.fullName ?? "",
-          companyName: data.companyName ?? data.company ?? "",
-          employeeNumber: data.employeeNumber ?? data.employeeNr ?? "",
-          email: data.email ?? auth.currentUser?.email ?? "",
-        });
-      } else {
-        setProfile({
-          fullName: "",
-          companyName: "",
-          employeeNumber: "",
-          email: auth.currentUser?.email ?? "",
-        });
-      }
-    } catch (e) {
-      console.error("Kunne ikke hente brukerprofil:", e);
-      setProfileError("Feil ved henting av profil.");
-    } finally {
-      setProfileLoading(false);
-    }
-  };
-
   const fetchSelectedWaste = async () => {
     if (!currentUser) return setSelectedWaste([]);
-    try {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        const arr = userSnap.data().selectedWaste || [];
-        setSelectedWaste(Array.isArray(arr) ? arr : []);
-      } else {
-        setSelectedWaste([]);
-      }
-    } catch (e) {
-      console.error("Kunne ikke hente selectedWaste:", e);
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      const arr = userSnap.data().selectedWaste || [];
+      setSelectedWaste(arr);
     }
   };
 
@@ -294,7 +130,6 @@ export default function ProfilePage(): React.ReactElement {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u);
       getAllData(u ? u.uid : null);
-      fetchUserProfile(u ? u.uid : null);
     });
     return () => unsub();
   }, []);
@@ -303,57 +138,17 @@ export default function ProfilePage(): React.ReactElement {
     useCallback(() => {
       fetchSelectedWaste();
       getAllData(currentUser?.uid ?? null);
-      fetchUserProfile(currentUser?.uid ?? null);
     }, [currentUser?.uid])
   );
 
   const screenWidth = Dimensions.get("window").width - 48;
-  const radius = 90;
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (e) {
-      console.error("Logout error:", e);
-    } finally {
-      router.replace("/brukerregistrering/autentication");
-    }
+    await signOut();
+    router.replace("/brukerregistrering/autentication");
   };
 
   return (
-    <FlatList
-      data={trashItems}
-      keyExtractor={(i) => i.id}
-      // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
-      ListHeaderComponent={() => (
-        <View style={{ paddingBottom: 16 }}>
-          {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
-          <View style={styles.headerFull}>
-            <View style={styles.headerInner}>
-              {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-              >
-                <Text style={styles.backIcon}>‹</Text>
-              </Pressable>
-
-              <Text style={styles.headerTitle}>Administrator</Text>
-
-              {/* høyre side er tom (ingen profil-ikon) */}
-              <View style={styles.headerRight} />
-            </View>
-          </View>
-
-          {/* PROFILE BOX */}
-          <View style={styles.box}>
-            <Text style={styles.boxTitle}>Profil</Text>
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>Bedrift:</Text>
-              <Text style={styles.label}>Ansattnummer:</Text>
-              <Text style={styles.label}>Email:</Text>
-            </View>
-          </View>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -368,76 +163,44 @@ export default function ProfilePage(): React.ReactElement {
         <View style={styles.headerRight} />
       </View>
 
-          <Pressable
-            onPress={() => router.push("./addWaste")}
-            style={styles.linkButton}
-          >
-            <Text style={styles.linkText}>Legg til mer</Text>
-          </Pressable>
       {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
         <View style={[styles.box, { borderColor: colors.textBox, backgroundColor: colors.background }]}>
           <Text style={styles.boxTitle}>Din profil</Text>
 
-          <View style={[styles.infoBox, { borderColor: colors.darkGreen, backgroundColor: colors.background }]}>
-            {profileLoading ? (
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            {loading ? (
               <ActivityIndicator color={colors.mainGreen} />
-            ) : profileError ? (
-              <Text style={{ color: "red" }}>{profileError}</Text>
-            ) : profile ? (
-              <>
-                <View style={styles.row}>
-                  <Text style={styles.labelBold}>Navn: </Text>
-                  <Text style={styles.valueText}>{profile.fullName || "Ikke satt"}</Text>
-                </View>
+            ) : chartData.length ? (
+              <View style={{ width: screenWidth, alignItems: "center" }}>
+                <PieChart
+                  data={chartData}
+                  width={screenWidth - 30}
+                  height={230}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft={"20"}
+                  hasLegend={false}
+                  absolute={false}
+                  chartConfig={{
+                    color: () => `#000`,
+                    labelColor: () => `#000`,
+                  }}
+                />
 
-                <View style={styles.row}>
-                  <Text style={styles.labelBold}>Firma: </Text>
-                  <Text style={styles.valueText}>{profile.companyName || "Ikke satt"}</Text>
+                <View style={styles.tooltip}>
+                  <Text style={styles.tooltipText}>{tooltipText}</Text>
                 </View>
-
-                <View style={styles.row}>
-                  <Text style={styles.labelBold}>Ansatt-ID: </Text>
-                  <Text style={styles.valueText}>{profile.employeeNumber || "Ikke satt"}</Text>
-                </View>
-
-                <View style={styles.row}>
-                  <Text style={styles.labelBold}>E-post: </Text>
-                  <Text style={styles.valueText}>{profile.email || "Ikke satt"}</Text>
-                </View>
-              </>
+              </View>
             ) : (
-              <Text>Ingen profildata tilgjengelig.</Text>
+              <Text style={styles.noData}>Ingen data for diagram</Text>
             )}
           </View>
-        </View>
 
-        {/* Valgt avfall */}
-        <Text style={styles.sectionTitle}>Valgt avfall</Text>
-        <View style={styles.chipRow}>
-          {selectedWaste.length === 0 ? (
-            <Text style={styles.hintText}>Ingen valgte avfallstyper</Text>
-          ) : (
-            selectedWaste.map((t) => (
-              <View key={t} style={[styles.chip, { borderColor: colors.mainGreen }]}>
-                <Text style={styles.chipText}>{t}</Text>
-              </View>
-            ))
-          )}
+          {/* Litt padding mellom header og liste */}
+          <View style={{ height: 8 }} />
         </View>
-      )}
-      // renderItem viser hvert trash-element
-      renderItem={({ item }) => (
-        <View style={styles.listCard}>
-          <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
-          <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
-          {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
-        </View>
-      )}
-      ListFooterComponent={() => (
-        <View style={{ paddingTop: 20 }}>
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
 
         {/* Link for å legge til flere avfallstyper */}
         <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
@@ -507,28 +270,24 @@ export default function ProfilePage(): React.ReactElement {
             <Text style={styles.logoutText}>Logg ut</Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </View>
+      )}
+      contentContainerStyle={{ paddingBottom: 80 }}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.background 
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 14,
   },
-  headerFull: {
-    width: "100%",
-    backgroundColor: colors.mainGreen,
-  },
-  headerInner: {
-    height: 64,
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 18,
+    paddingTop: 90,
     paddingBottom: 20,
     paddingHorizontal: 14,
     backgroundColor: colors.mainGreen,
@@ -539,37 +298,47 @@ const styles = StyleSheet.create({
     width: 48,
     justifyContent: "center",
   },
-  backText: {
+  backIcon: {
+    color: "#FFFFFF",
     fontSize: 28,
-    color: colors.background, 
     fontWeight: "600",
   },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
+  headerRight: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    width: 28,
+  },
+
+  header: {
+    backgroundColor: colors.lightGreen,
+    paddingVertical: 22,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 12,
+    marginBottom: 18,
   },
   headerTitle: {
-    fontSize: 25,
+    color: "#FFFFFF",
+    fontSize: 22,
     fontWeight: "700",
-    color: colors.background, 
-  },
-  headerRight: {
-    width: 48,
   },
 
   box: {
     backgroundColor: colors.textBox,
     padding: 16,
-    margin: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#DDE7E2",
+    marginBottom: 20,
   },
   boxTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#2F3E36",
-    marginBottom: 10,
+    color: colors.text,
+    marginBottom: 12,
   },
   infoBox: {
     borderWidth: 1,
@@ -577,60 +346,46 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
   },
-
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  labelBold: {
-    fontWeight: "700",
-    color: colors.text,
-  },
-  valueText: {
-    fontWeight: "400",
-    color: colors.text,
-  },
-
   label: {
     color: colors.text,
     paddingVertical: 4,
   },
+
   sectionTitle: {
     fontWeight: "700",
     fontSize: 16,
     color: "#2F3E36",
-    marginHorizontal: 35,
-    marginTop: 4,
-    marginBottom: 12,
+    marginBottom: 10,
+    marginLeft: "3%",
   },
   subText: {
     color: "#6B7A75",
-    marginHorizontal: 35,
-    marginBottom: 12,
+    marginBottom: 16,
+    marginLeft: "3%",
   },
-  chipRow: {
+
+  chipContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginHorizontal: 35,
+    gap: 10,
     marginBottom: 12,
+    marginLeft: "3%",
   },
+
   chip: {
     borderWidth: 1,
     borderColor: colors.mainGreen,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderRadius: 22,
-    marginRight: 8,
-    marginBottom: 8,
   },
   chipText: {
     color: "#2F3E36",
   },
+
   linkButton: {
-    marginHorizontal: 35,
-    marginBottom: 18,
+    marginBottom: 26,
+    marginLeft: "3%",
   },
   linkText: {
     color: colors.darkGreen,
@@ -638,47 +393,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
   },
+
   tooltip: {
     backgroundColor: "white",
-    padding: 12,
+    padding: 14,
     borderRadius: 10,
-    alignSelf: "center",
-    marginTop: 8,
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    marginTop: -60,
   },
   tooltipText: {
     color: "#2F3E36",
     textAlign: "center",
+    fontSize: 14,
+    width: 250,
   },
+
   noData: {
     color: "#6B7A75",
   },
-  logoutWrap: {
-    marginTop: 8,
-    marginBottom: 30,
-    alignItems: "center",
+
+  listCard: {
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    borderColor: "#E5ECE9",
+    borderWidth: 1,
+    marginBottom: 12,
   },
+  listTitle: {
+    fontWeight: "600",
+    color: "#2F3E36",
+  },
+  listText: {
+    marginTop: 6,
+    color: colors.text,
+  },
+
   logoutButton: {
-    backgroundColor: colors.mainGreen,
-    paddingVertical: 17,
-    marginTop: 20,
-    borderRadius: 20,
-    marginBottom: 40,
-    alignSelf: "center",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 50,
     width: "70%",
-    alignItems: "center",
   },
   logoutText: {
+    textAlign: "center",
     color: "white",
     fontWeight: "700",
     fontSize: 16,
-  },
-  hintText: {
-    color: "#64748b",
   },
 });
