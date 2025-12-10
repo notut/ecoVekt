@@ -61,7 +61,7 @@ export default function ChooseWaste() {
               id: docSnap.id,
               title: data.title ?? data.name ?? String(docSnap.id),
               description: data.description,
-              imageUrl: data.imageUrl || undefined,
+              imageUrl: data.imageUrl || data.imageurl || undefined,
             });
           });
 
