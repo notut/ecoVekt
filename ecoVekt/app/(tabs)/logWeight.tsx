@@ -1,14 +1,24 @@
 // skjermen som skal registrere vekt
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { colors } from "@/components/colors"; // henter fargene herfra
+import { colors } from "@/components/colors";
 import { Header } from "@/components/header";
-import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
+import { StepProgress } from "@/components/stepProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { auth } from "../../firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BottomLeaves } from "@/components/Bottom_leaves";
+import { TopLeaf } from "@/components/top_leaf";
+
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
@@ -22,7 +32,6 @@ export default function RegistrerVekt() {
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-
   const handleFullfor = async () => {
     if (!trashTitle) {
       Alert.alert("Feil", "Avfallstype mangler.");
@@ -31,13 +40,23 @@ export default function RegistrerVekt() {
 
     const numericWeight = Number(weight);
 
-    if (weight.trim() === "" || Number.isNaN(numericWeight) || numericWeight <= 0) {
-      Alert.alert("Ugyldig input", "Du må skrive inn et gyldig tall i kg (større enn 0).");
+    if (
+      weight.trim() === "" ||
+      Number.isNaN(numericWeight) ||
+      numericWeight <= 0
+    ) {
+      Alert.alert(
+        "Ugyldig input",
+        "Du må skrive inn et gyldig tall i kg (større enn 0)."
+      );
       return;
     }
 
     if (numericWeight > 500) {
-      Alert.alert("Urealistisk verdi", "Maks tillatt vekt er 500 kg per registrering.");
+      Alert.alert(
+        "Urealistisk verdi",
+        "Maks tillatt vekt er 500 kg per registrering."
+      );
       return;
     }
 
@@ -56,7 +75,7 @@ export default function RegistrerVekt() {
       setSaving(true);
 
       const raw = await AsyncStorage.getItem("pendingWasteEntries");
-      const list = raw ? (JSON.parse(raw) as typeof entry[]) : [];
+      const list = raw ? (JSON.parse(raw) as (typeof entry)[]) : [];
 
       list.push(entry);
 
@@ -76,23 +95,17 @@ export default function RegistrerVekt() {
       <Header
         title="Registrer vekt"
         onBackPress={() => router.push("/(tabs)/chooseWaste")}
-        // 💡 FIX: Link the profile icon to the profile page
+        // 🔑 Linked profile navigation
         onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
-         height: 80,
-        justifyContent: "flex-start",
-        overflow: "hidden",
+          height: 80,
+          overflow: "hidden",
           paddingLeft: 10,
-          backgroundColor: colors.mainGreen,
         }}
         titleStyle={{
-          fontSize: 25,//endret dette så teksten er større
-        marginTop: 30, //endret dette så teksten kommer høyere
-        textAlign: "center",  //sentrerer overskriften
-        alignSelf: "flex-start",
-        color: "#FFFFFF",
-        fontWeight: "600",
-      
+          fontSize: 20,
+          color: "#FFFFFF",
+          fontWeight: "600",
         }}
       />
 
@@ -107,12 +120,12 @@ export default function RegistrerVekt() {
         </View>
 
         <View style={styles.labelRow}>
-        <MaterialCommunityIcons
-          name="scale-balance"
-          size={32}
-          color={colors.mainGreen}
-          style={{ marginRight: 8 }}
-        />
+          <MaterialCommunityIcons
+            name="scale-balance"
+            size={32}
+            color={colors.mainGreen}
+            style={{ marginRight: 8 }}
+          />
           <Text style={styles.labelTwo}>Vekt</Text>
         </View>
 
@@ -146,63 +159,60 @@ export default function RegistrerVekt() {
           </TouchableOpacity>
         </View>
 
+        <Text style={styles.text}>F.e.ks 0,25 kg</Text>
+
         <TouchableOpacity
           style={styles.fullforButton}
           onPress={handleFullfor}
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            Fullfør{saving ? "Lagrer..." : ""}
+            Lagre{saving ? "Lagrer..." : ""}
           </Text>
         </TouchableOpacity>
+        <BottomLeaves />
       </View>
     </View>
   );
 }
 
-// Stylingen
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.background,
   },
-
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 8,
+    gap: 18,
   },
-
   stepWrapper: {
     alignItems: "center",
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 8,
   },
-
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
-
   labelIcon: {
     marginRight: 8,
   },
-
   label: {
     fontSize: 18,
     color: colors.text,
     fontFamily: "Inter_400Regular",
   },
-
   infoBox: {
     backgroundColor: colors.textBox,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 16,
+    marginTop: 30,
   },
-
   infoLabel: {
     fontSize: 14,
     fontWeight: "600",
@@ -210,26 +220,22 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginBottom: 4,
   },
-
   infoTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: colors.darkGreen,
     fontFamily: "Poppins_600SemiBold",
   },
-
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 1,
   },
-
   labelTwo: {
     fontSize: 24,
     color: colors.text,
     fontFamily: "Inter_400Regular",
   },
-
   adjustBtn: {
     width: 50,
     height: 50,
@@ -238,14 +244,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   adjustText: {
     color: "#FFF",
     fontSize: 30,
     fontWeight: "bold",
     lineHeight: 42,
   },
-
   input: {
     flex: 1,
     height: 50,
@@ -253,25 +257,29 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.mainGreen,
     borderRadius: 12,
-    marginHorizontal: 8,
+    marginHorizontal: 12,
     paddingHorizontal: 12,
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "Inter_400Regular",
   },
-
   fullforButton: {
     backgroundColor: colors.mainGreen,
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: "center",
-    marginHorizontal: 16,
-    marginTop: 8,
+    marginHorizontal: 120,
+    marginTop: 10,
   },
-
   fullforText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "500",
     color: colors.textBox,
     fontFamily: "Poppins_500Medium",
+  },
+  text: {
+    textAlign: "center",
+    marginBottom: 8,
+    color: "#5c5c5cff",
+    fontFamily: "Inter_400Regular",
   },
 });
