@@ -170,21 +170,21 @@ export default function AddWasteScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#f8fafc" },
+  screen: { flex: 1, backgroundColor: "#f8fafc", paddingTop: 80 },
   header: {
-    height: 88,
+    height: 50,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#ffffffff",
   },
   backButton: { paddingVertical: 8, paddingHorizontal: 6 },
   title: { fontSize: 18, fontWeight: "700", color: "#2f6f5b" },
 
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, paddingTop: 40 },
   center: { alignItems: "center", justifyContent: "center", flex: 1 },
   hint: { color: "#64748b", marginTop: 8 },
 

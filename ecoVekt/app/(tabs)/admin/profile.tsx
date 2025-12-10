@@ -27,7 +27,7 @@ import { colors } from "@/components/colors";
 const auth = getAuth();
 const db = getFirestore();
 
-// Type for ett avfalls-element 
+// Type for ett avfalls-element
 type TrashItemType = {
   id: string;
   weight: number;
@@ -39,7 +39,7 @@ export default function ProfilePage(): React.ReactElement {
   const { signOut } = useAuthSession(); // logout-funksjon fra context
   const router = useRouter(); // navigator
 
-  // Lokale state-variabler 
+  // Lokale state-variabler
   const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<
@@ -47,7 +47,10 @@ export default function ProfilePage(): React.ReactElement {
   >([]);
   const [tooltipText, setTooltipText] = useState<string>("");
   const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
-  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null);
+  const [selectedSlice, setSelectedSlice] = useState<{
+    name: string;
+    value: number;
+  } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
   const [profile, setProfile] = useState<{
     fullName?: string;
@@ -58,19 +61,19 @@ export default function ProfilePage(): React.ReactElement {
   const [profileLoading, setProfileLoading] = useState<boolean>(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  // basert på norske sorteringsfarger 
+  // basert på norske sorteringsfarger
   const wasteColorMap: Record<string, string> = {
-    mat: "#01A04C",            
-    plast: "#921E80",        
-    papir: "#0082BE",         
-    glass: "#01C3A7",         
-    metall: "#5A6E77",       
-    farlig: "#E11D48",       
-    rest: "#2E2E2E",          
+    mat: "#01A04C",
+    plast: "#921E80",
+    papir: "#0082BE",
+    glass: "#01C3A7",
+    metall: "#5A6E77",
+    farlig: "#E11D48",
+    rest: "#2E2E2E",
 
-    tekstil: "#A78BFA",        
-    trevirke: "#A0703A",     
-    porselen: "#8B8F90",       
+    tekstil: "#A78BFA",
+    trevirke: "#A0703A",
+    porselen: "#8B8F90",
     gips: "#6B7A75",
     isolasjon: "#6B8F71",
     glassMetall: "#01C3A7",
@@ -93,42 +96,69 @@ export default function ProfilePage(): React.ReactElement {
     const t = type.toLowerCase().trim();
 
     switch (t) {
-      case "batteri": return wasteColorMap["batteri"];
-      case "elektronikk": return wasteColorMap["elektronikk"];
-      case "farlig avfall": return wasteColorMap["farlig"];
-      case "gips": return wasteColorMap["gips"];
-      case "glass og metall": return wasteColorMap["glassMetall"];
-      case "gummi": return wasteColorMap["gummi"];
-      case "hageavfall": return wasteColorMap["hageavfall"];
-      case "isolasjon": return wasteColorMap["isolasjon"];
-      case "isopor": return wasteColorMap["isopor"];
-      case "klær og tekstil": return wasteColorMap["tekstil"];
-      case "lyspærer og lysrør": return wasteColorMap["lyspærer"];
-      case "matavfall": return wasteColorMap["matavfall"];
-      case "medisinsk avfall": return wasteColorMap["medisinsk"];
-      case "papp og papir": return wasteColorMap["papir"];
-      case "plastemballasje": return wasteColorMap["plast"];
-      case "porselen og keramikk": return wasteColorMap["porselen"];
-      case "radioaktivt avfall": return wasteColorMap["radioaktivt"];
-      case "restavfall": return wasteColorMap["restavfall"];
-      case "trevirke": return wasteColorMap["trevirke"];
+      case "batteri":
+        return wasteColorMap["batteri"];
+      case "elektronikk":
+        return wasteColorMap["elektronikk"];
+      case "farlig avfall":
+        return wasteColorMap["farlig"];
+      case "gips":
+        return wasteColorMap["gips"];
+      case "glass og metall":
+        return wasteColorMap["glassMetall"];
+      case "gummi":
+        return wasteColorMap["gummi"];
+      case "hageavfall":
+        return wasteColorMap["hageavfall"];
+      case "isolasjon":
+        return wasteColorMap["isolasjon"];
+      case "isopor":
+        return wasteColorMap["isopor"];
+      case "klær og tekstil":
+        return wasteColorMap["tekstil"];
+      case "lyspærer og lysrør":
+        return wasteColorMap["lyspærer"];
+      case "matavfall":
+        return wasteColorMap["matavfall"];
+      case "medisinsk avfall":
+        return wasteColorMap["medisinsk"];
+      case "papp og papir":
+        return wasteColorMap["papir"];
+      case "plastemballasje":
+        return wasteColorMap["plast"];
+      case "porselen og keramikk":
+        return wasteColorMap["porselen"];
+      case "radioaktivt avfall":
+        return wasteColorMap["radioaktivt"];
+      case "restavfall":
+        return wasteColorMap["restavfall"];
+      case "trevirke":
+        return wasteColorMap["trevirke"];
     }
 
-    if (t.includes("mat") || t.includes("bio") || t.includes("organisk")) return wasteColorMap["mat"];
-    if (t.includes("plast") || t.includes("isopor")) return wasteColorMap["plast"];
-    if (t.includes("papir") || t.includes("papp") || t.includes("kartong")) return wasteColorMap["papir"];
+    if (t.includes("mat") || t.includes("bio") || t.includes("organisk"))
+      return wasteColorMap["mat"];
+    if (t.includes("plast") || t.includes("isopor"))
+      return wasteColorMap["plast"];
+    if (t.includes("papir") || t.includes("papp") || t.includes("kartong"))
+      return wasteColorMap["papir"];
     if (t.includes("glass")) return wasteColorMap["glass"];
-    if (t.includes("metall") || t.includes("metal")) return wasteColorMap["metall"];
+    if (t.includes("metall") || t.includes("metal"))
+      return wasteColorMap["metall"];
     if (
       t.includes("farlig") ||
       t.includes("kjemisk") ||
       t.includes("batteri") ||
       t.includes("elektronikk") ||
       t.includes("lyspære")
-    ) return wasteColorMap["farlig"];
-    if (t.includes("tekstil") || t.includes("klær")) return wasteColorMap["tekstil"];
-    if (t.includes("tre") || t.includes("virke")) return wasteColorMap["trevirke"];
-    if (t.includes("porsel") || t.includes("keramikk")) return wasteColorMap["porselen"];
+    )
+      return wasteColorMap["farlig"];
+    if (t.includes("tekstil") || t.includes("klær"))
+      return wasteColorMap["tekstil"];
+    if (t.includes("tre") || t.includes("virke"))
+      return wasteColorMap["trevirke"];
+    if (t.includes("porsel") || t.includes("keramikk"))
+      return wasteColorMap["porselen"];
     if (t.includes("hage")) return wasteColorMap["hageavfall"];
     if (t.includes("medisinsk")) return wasteColorMap["medisinsk"];
     if (t.includes("radio")) return wasteColorMap["radioaktivt"];
@@ -136,7 +166,11 @@ export default function ProfilePage(): React.ReactElement {
     return wasteColorMap["default"];
   };
 
-  const createArcPath = (radius: number, startAngle: number, endAngle: number) => {
+  const createArcPath = (
+    radius: number,
+    startAngle: number,
+    endAngle: number
+  ) => {
     const polar = (angle: number) => ({
       x: radius * Math.cos((angle * Math.PI) / 180),
       y: radius * Math.sin((angle * Math.PI) / 180),
@@ -179,10 +213,10 @@ export default function ProfilePage(): React.ReactElement {
           typeof d.wasteTitle === "string"
             ? d.wasteTitle
             : typeof d.type === "string"
-            ? d.type
-            : typeof d.wasteName === "string"
-            ? d.wasteName
-            : "Ukjent";
+              ? d.type
+              : typeof d.wasteName === "string"
+                ? d.wasteName
+                : "Ukjent";
 
         results.push({
           id: docSnap.id,
@@ -209,7 +243,9 @@ export default function ProfilePage(): React.ReactElement {
         }));
         setChartData(arr);
 
-        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+        const defaultPick = types.includes("Restavfall")
+          ? "Restavfall"
+          : types[0];
         const total = totals[defaultPick] ?? 0;
         setTooltipText(
           `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
@@ -315,7 +351,10 @@ export default function ProfilePage(): React.ReactElement {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.headerLeft} onPress={() => router.push("/(tabs)/chooseWaste")}>
+        <Pressable
+          style={styles.headerLeft}
+          onPress={() => router.push("/(tabs)/chooseWaste")}
+        >
           <Text style={styles.backText}>‹</Text>
         </Pressable>
 
@@ -329,10 +368,23 @@ export default function ProfilePage(): React.ReactElement {
       {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
-        <View style={[styles.box, { borderColor: colors.textBox, backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.box,
+            { borderColor: colors.textBox, backgroundColor: colors.background },
+          ]}
+        >
           <Text style={styles.boxTitle}>Din profil</Text>
 
-          <View style={[styles.infoBox, { borderColor: colors.darkGreen, backgroundColor: colors.background }]}>
+          <View
+            style={[
+              styles.infoBox,
+              {
+                borderColor: colors.darkGreen,
+                backgroundColor: colors.background,
+              },
+            ]}
+          >
             {profileLoading ? (
               <ActivityIndicator color={colors.mainGreen} />
             ) : profileError ? (
@@ -341,22 +393,30 @@ export default function ProfilePage(): React.ReactElement {
               <>
                 <View style={styles.row}>
                   <Text style={styles.labelBold}>Navn: </Text>
-                  <Text style={styles.valueText}>{profile.fullName || "Ikke satt"}</Text>
+                  <Text style={styles.valueText}>
+                    {profile.fullName || "Ikke satt"}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.labelBold}>Firma: </Text>
-                  <Text style={styles.valueText}>{profile.companyName || "Ikke satt"}</Text>
+                  <Text style={styles.valueText}>
+                    {profile.companyName || "Ikke satt"}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.labelBold}>Ansatt-ID: </Text>
-                  <Text style={styles.valueText}>{profile.employeeNumber || "Ikke satt"}</Text>
+                  <Text style={styles.valueText}>
+                    {profile.employeeNumber || "Ikke satt"}
+                  </Text>
                 </View>
 
                 <View style={styles.row}>
                   <Text style={styles.labelBold}>E-post: </Text>
-                  <Text style={styles.valueText}>{profile.email || "Ikke satt"}</Text>
+                  <Text style={styles.valueText}>
+                    {profile.email || "Ikke satt"}
+                  </Text>
                 </View>
               </>
             ) : (
@@ -372,7 +432,10 @@ export default function ProfilePage(): React.ReactElement {
             <Text style={styles.hintText}>Ingen valgte avfallstyper</Text>
           ) : (
             selectedWaste.map((t) => (
-              <View key={t} style={[styles.chip, { borderColor: colors.mainGreen }]}>
+              <View
+                key={t}
+                style={[styles.chip, { borderColor: colors.mainGreen }]}
+              >
                 <Text style={styles.chipText}>{t}</Text>
               </View>
             ))
@@ -380,7 +443,10 @@ export default function ProfilePage(): React.ReactElement {
         </View>
 
         {/* Link for å legge til flere avfallstyper */}
-        <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+        <Pressable
+          onPress={() => router.push("./addWaste")}
+          style={styles.linkButton}
+        >
           <Text style={styles.linkText}>Legg til mer</Text>
         </Pressable>
 
@@ -396,7 +462,10 @@ export default function ProfilePage(): React.ReactElement {
               <Svg width={screenWidth} height={radius * 2 + 20}>
                 <G x={screenWidth / 2} y={radius + 10}>
                   {(() => {
-                    const total = chartData.reduce((acc, c) => acc + c.population, 0);
+                    const total = chartData.reduce(
+                      (acc, c) => acc + c.population,
+                      0
+                    );
                     let startAngle = -90;
                     return chartData.map((slice) => {
                       const angle = (slice.population / total) * 360;
@@ -428,7 +497,8 @@ export default function ProfilePage(): React.ReactElement {
               {selectedSlice ? (
                 <View style={styles.tooltip}>
                   <Text style={styles.tooltipText}>
-                    Du har kastet {selectedSlice.value} kg {selectedSlice.name.toLowerCase()}.
+                    Du har kastet {selectedSlice.value} kg{" "}
+                    {selectedSlice.name.toLowerCase()}.
                   </Text>
                 </View>
               ) : null}
@@ -453,9 +523,9 @@ export default function ProfilePage(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.background 
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 
   header: {
@@ -475,7 +545,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 28,
-    color: colors.background, 
+    color: colors.background,
     fontWeight: "600",
   },
   headerCenter: {
@@ -485,7 +555,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 25,
     fontWeight: "700",
-    color: colors.background, 
+    color: colors.background,
   },
   headerRight: {
     width: 48,
