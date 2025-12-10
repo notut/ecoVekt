@@ -10,10 +10,11 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { auth } from "@/firebaseConfig";
+import { Feather } from "@expo/vector-icons";
+import { auth, db } from "@/firebaseConfig";
 import { useAuthSession } from "@/providers/authctx";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useLocalSearchParams } from "expo-router";
 import LoginScreen from "./login";
 
@@ -30,14 +31,28 @@ export default function AuthenticationScreen() {
 
   const [isSignUp, setIsSignUp] = useState<boolean>(startInSignUp);
 
+  const [fullName, setFullName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [employeeNumber, setEmployeeNumber] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const registerNewUser = async () => {
+    const trimmedName = fullName.trim();
     const email = userEmail.trim();
-    if (!email || !password || !repeatPassword) {
+    const trimmedCompany = companyName.trim();
+    const trimmedEmployee = employeeNumber.trim();
+
+    if (
+      !trimmedName ||
+      !email ||
+      !password ||
+      !repeatPassword ||
+      !trimmedCompany ||
+      !trimmedEmployee
+    ) {
       Alert.alert("Feil", "Fyll inn alle feltene.");
       return;
     }
@@ -48,10 +63,29 @@ export default function AuthenticationScreen() {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCred = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const uid = userCred.user.uid;
+
+      await setDoc(doc(db, "users", uid), {
+        email,
+        fullName: trimmedName,
+        companyName: trimmedCompany,
+        employeeNumber: trimmedEmployee,
+        createdAt: serverTimestamp(),
+      });
+
       Alert.alert("Bruker opprettet", "Brukeren ble registrert.");
       setIsSignUp(false);
-      setPasswordError(null);
+
+      setPassword("");
+      setRepeatPassword("");
+      setCompanyName("");
+      setEmployeeNumber("");
+      setFullName("");
     } catch (e: any) {
       console.log("Registrering feilet:", e?.code ?? e);
       switch (e?.code) {
@@ -70,7 +104,16 @@ export default function AuthenticationScreen() {
     }
   };
 
-  // Når vi ikke er i signup-modus brukes LoginScreen 
+  const signInWithUser = async () => {
+    const email = userEmail.trim();
+    if (!email || !password) {
+      Alert.alert("Feil", "Skriv inn korrekt e-post og passord");
+      return;
+    }
+    await signIn(email, password);
+  };
+
+  // Når vi ikke er i signup-modus brukes LoginScreen
   if (!isSignUp) {
     return <LoginScreen />;
   }
@@ -79,6 +122,10 @@ export default function AuthenticationScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
       <View style={styles.container}>
+        {/* NEDERSTE BLADER */}
+        <View style={styles.leaves}>
+          <BottomLeaves />
+        </View>
         {/* TOPP-BLAD */}
         <TopLeaf />
 
@@ -94,6 +141,33 @@ export default function AuthenticationScreen() {
         >
           {/* INNHOLD */}
           <View style={styles.content}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Fullt navn"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                value={companyName}
+                onChangeText={setCompanyName}
+                placeholder="Navn på bedrift"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                value={employeeNumber}
+                onChangeText={setEmployeeNumber}
+                placeholder="Ansattnummer"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
             {/* Epost */}
             <View style={styles.inputContainer}>
               <TextInput
@@ -158,9 +232,6 @@ export default function AuthenticationScreen() {
             </View>
           </View>
         </ScrollView>
-
-        {/* NEDERSTE BLADER */}
-        <BottomLeaves />
       </View>
     </SafeAreaView>
   );
@@ -176,11 +247,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     position: "relative",
   },
+  leaves: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
+    opacity: 0.6,
+  },
   scrollContent: {
     flexGrow: 1,
   },
-
-  /* LOGO */
   logo: {
     position: "absolute",
     width: 190.51,
@@ -189,8 +266,6 @@ const styles = StyleSheet.create({
     left: 98,
     resizeMode: "contain",
   },
-
-  /* INNHOLD */
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -223,6 +298,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 6,
     elevation: 3,
+    zIndex: 2,
   },
   primaryButtonText: {
     color: "#FFFFFF",
@@ -239,8 +315,9 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   registerLink: {
-    color: colors.mainGreen,
+    color: colors.darkGreen,
     fontWeight: "600",
+    zIndex: 5,
   },
 
   errorText: {

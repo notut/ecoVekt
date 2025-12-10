@@ -192,9 +192,9 @@ list.forEach((e) => {
       title: item.wasteTitle,
       description:
         item.count > 1
-          ? `${item.totalKg} kg (${item.count} registreringer)`
+          ? `${item.totalKg} kg ( ${item.count} registreringer )`
           : `${item.totalKg} kg`,
-      imageUrl: item.imageUrl ?? undefined,   // 👈 nå kommer ikonet inn
+      imageUrl: item.imageUrl ?? null, // hvis du senere legger til imageUrl i localstorage
     }}
     onSelect={() => {}}
     compact

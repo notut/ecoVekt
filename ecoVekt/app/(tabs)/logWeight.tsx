@@ -8,15 +8,18 @@ import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
 import { auth } from "../../firebaseConfig";
 import { colors } from "@/components/colors"; // henter fargene herfra 
+import { Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
+  imageUrl?: string;
 };
 
 export default function RegistrerVekt() {
   const router = useRouter();
-  const { trashId, trashTitle } = useLocalSearchParams<RouteParams>();
+  const { trashId, trashTitle, imageUrl } = useLocalSearchParams<RouteParams>();
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
@@ -48,6 +51,7 @@ export default function RegistrerVekt() {
       amountKg: numericWeight,
       userId: user?.uid ?? null,
       savedAt: new Date().toISOString(),
+      imageUrl: imageUrl ?? null,
     };
 
     try {
@@ -102,7 +106,15 @@ export default function RegistrerVekt() {
           <Text style={styles.infoTitle}>{trashTitle}</Text>
         </View>
 
-        <Text style={styles.label}>Vekt (kg)</Text>
+        <View style={styles.labelRow}>
+        <MaterialCommunityIcons
+          name="scale-balance"
+          size={32}
+          color={colors.mainGreen}
+          style={{ marginRight: 8 }}
+        />
+          <Text style={styles.labelTwo}>Vekt</Text>
+        </View>
 
         <View style={styles.weightRow}>
           <TouchableOpacity
@@ -113,7 +125,7 @@ export default function RegistrerVekt() {
               )
             }
           >
-            <Text style={styles.adjustText}></Text>
+            <Text style={styles.adjustText}>-</Text>
           </TouchableOpacity>
 
           <TextInput
@@ -140,7 +152,7 @@ export default function RegistrerVekt() {
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            {saving ? "Lagrer..." : "Fullfør"}
+            {saving ? "Lagrer..." : ""}
           </Text>
         </TouchableOpacity>
       </View>
@@ -166,6 +178,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",  // gjør at ikon + tekst står midtstilt som i bildet
+    marginBottom: 8,
+  },
+  
+  labelIcon: {
+    marginRight: 8,
+  },
+  
+  label: {
+    fontSize: 18,
+    color: colors.text,
+    fontFamily: "Inter_400Regular",
+  },
+
   infoBox: {
     backgroundColor: colors.textBox,
     borderRadius: 12,
@@ -189,17 +218,16 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
   },
 
-  label: {
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 8,
-    fontFamily: "Inter_400Regular",
-  },
-
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+  },
+
+  labelTwo: {
+    fontSize: 24,
+    color: colors.text,
+    fontFamily: "Inter_400Regular",
   },
 
   adjustBtn: {
