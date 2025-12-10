@@ -152,7 +152,7 @@ export default function RegistrerVekt() {
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            {saving ? "Lagrer..." : "Lagre"}
+            Fullfør{saving ? "Lagrer..." : ""}
           </Text>
         </TouchableOpacity>
       </View>
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
 
   fullforText: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: "500",
     color: colors.textBox,
     fontFamily: "Poppins_500Medium",
