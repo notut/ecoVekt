@@ -24,6 +24,8 @@ import {
 import Svg, { G, Path } from "react-native-svg";
 import { colors } from "@/components/colors";
 
+// DETTE ER RIKTIG KODE
+
 const auth = getAuth();
 const db = getFirestore();
 
