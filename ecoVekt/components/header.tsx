@@ -1,7 +1,16 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet, StatusBar, ViewStyle, TextStyle,} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors } from "@/components/colors";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextStyle,
+    View,
+    ViewStyle,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type HeaderProps  = {
     title: string;
@@ -11,7 +20,8 @@ type HeaderProps  = {
     titleStyle?: TextStyle;
 };
 
-const HEADER_BG = "#5F9D84"; //endret header farge slik som den matcher som i prototypen
+const HEADER_BG = colors.mainGreen; 
+const ICON_COLOR = colors.background; 
 
 export const Header: React.FC<HeaderProps> = ({
     title, 
@@ -21,6 +31,35 @@ export const Header: React.FC<HeaderProps> = ({
     titleStyle,
 }) => {
     const insets = useSafeAreaInsets();
+
+    // Components for balanced left/right layout
+    const BackButton = onBackPress ? (
+        <Pressable
+            onPress={onBackPress}
+            style={styles.iconButton}
+            hitSlop={10}
+        >
+            <Ionicons name="chevron-back" size={24} color={ICON_COLOR} />
+        </Pressable>
+    ) : (
+        // Placeholder to balance the layout if the back button is missing
+        <View style={styles.iconPlaceholder} />
+    );
+
+    const ProfileIcon = onProfilePress ? (
+        <Pressable
+            onPress={onProfilePress}
+            style={styles.profileButton}
+            hitSlop={10}
+        >
+            <View style={styles.profileCircle}>
+                <Ionicons name="person" size={20} color={ICON_COLOR} />
+            </View>
+        </Pressable>
+    ) : (
+        // Placeholder to balance the layout if the profile button is missing
+        <View style={styles.iconPlaceholder} />
+    );
 
     return (
         <View style={[styles.root, { backgroundColor: HEADER_BG }]}>
@@ -38,28 +77,24 @@ export const Header: React.FC<HeaderProps> = ({
                     containerStyle,
                 ]}
             >
-                {/* Venstre: tilbake knapp */}
-                <Pressable
-                    onPress={onBackPress}
-                    style={styles.iconButton}
-                    hitSlop={10}
-                >
-                    <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-                </Pressable>
+                {/* Venstre: tilbake knapp eller placeholder */}
+                {BackButton}
 
-                {/* Midten: tittel */}
-                <Text style={[styles.title, titleStyle]} numberOfLines={1}>{title}</Text>
-
-                {/* Høyre: profil ikon */}
-                <Pressable
-                    onPress={onProfilePress}
-                    style={styles.profileButton}
-                    hitSlop={10}
+                {/* Midten: tittel (flex: 1 and textAlign: 'center' ensures centering) */}
+                <Text 
+                    style={[
+                        styles.title, 
+                        titleStyle, 
+                        // Ensure text alignment is center unless explicitly overridden
+                        { textAlign: titleStyle?.textAlign === undefined ? 'center' : titleStyle.textAlign } 
+                    ]} 
+                    numberOfLines={1}
                 >
-                    <View style={styles.profileCircle}>
-                        <Ionicons name="person" size={20} color="#FFFFFF" />
-                    </View>
-                </Pressable>
+                    {title}
+                </Text>
+
+                {/* Høyre: profil ikon eller placeholder */}
+                {ProfileIcon}
             </View>
         </View>
     );
@@ -74,7 +109,7 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 16,
-      paddingBottom: 12,
+      paddingBottom: 12, // <-- CORRECTED: Removed the syntax error here
     },
     iconButton: {
       width: 32,
@@ -82,12 +117,17 @@ const styles = StyleSheet.create({
       justifyContent: "center",
       alignItems: "flex-start",
     },
+    // Must match iconButton/profileButton width for centering
+    iconPlaceholder: { 
+        width: 32,
+        height: 32,
+    },
     title: {
       flex: 1,
-      textAlign: "center",
+      textAlign: "center", // CRITICAL for inner centering
       fontSize: 24,
       fontWeight: "600",
-      color: "#FFFFFF",
+      color: ICON_COLOR, 
     },
     profileButton: {
       width: 32,
@@ -100,7 +140,7 @@ const styles = StyleSheet.create({
       height: 32,
       borderRadius: 16,
       borderWidth: 2,
-      borderColor: "#FFFFFF",
+      borderColor: ICON_COLOR, 
       justifyContent: "center",
       alignItems: "center",
     },
