@@ -1,4 +1,3 @@
-//importerer react og react native komponenter
 import React, { useState } from "react";
 import {
   View,
@@ -8,13 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-//import { SafeAreaView } from "react-native-safe-area-context";
-
-//importer auth context
 import { useAuthSession } from "@/providers/authctx";
 import { router } from "expo-router";
-
-//Komponenter
 import { BottomLeaves } from "@/components/Bottom_leaves";
 import { TopLeaf } from "@/components/top_leaf";
 import { colors } from "@/components/colors";
@@ -45,16 +39,11 @@ export const LoginScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* TOPP BLAD */}
         <TopLeaf />
-
-        {/* LOGO */}
         <Image
           source={require("../../assets/images/ecovekt_logo.png")}
           style={styles.logo}
         />
-
-        {/* INNHOLD */}
         <View style={styles.content}>
           <View style={styles.inputContainer}>
             <TextInput
@@ -67,7 +56,6 @@ export const LoginScreen: React.FC = () => {
             />
           </View>
 
-          {/* PASSORD */}
           <View style={styles.inputContainer}>
             <PasswordInput
               value={password}
@@ -76,7 +64,6 @@ export const LoginScreen: React.FC = () => {
             />
           </View>
 
-          {/* LOGIN KNAPP */}
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleLogin}
@@ -85,7 +72,6 @@ export const LoginScreen: React.FC = () => {
             <Text style={styles.primaryButtonText}>Logg inn</Text>
           </TouchableOpacity>
 
-          {/* REGISTRER BRUKER */}
           <View style={styles.registerRow}>
             <Text style={styles.registerText}>Ikke bruker? </Text>
             <TouchableOpacity onPress={handleRegister}>
@@ -94,14 +80,12 @@ export const LoginScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* NEDERSTE BLADER */}
         <BottomLeaves />
       </View>
     </SafeAreaView>
   );
 };
 
-// Stiler
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -112,8 +96,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     position: "relative",
   },
-
-  /* LOGO */
   logo: {
     position: "absolute",
     width: 190.51,
@@ -122,25 +104,20 @@ const styles = StyleSheet.create({
     left: 98,
     resizeMode: "contain",
   },
-
-  /* INNHOLD */
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 250,
     paddingBottom: 120,
   },
-
   inputContainer: {
     marginBottom: 20,
   },
-
   inputLabel: {
     fontSize: 14,
     color: colors.text,
     marginBottom: 4,
   },
-
   input: {
     backgroundColor: colors.textBox,
     borderRadius: 12,
@@ -151,7 +128,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
-
   primaryButton: {
     marginTop: 20,
     backgroundColor: colors.mainGreen,
@@ -164,23 +140,19 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },
-
   registerRow: {
     flexDirection: "row",
     justifyContent: "center",
     marginVertical: 20,
   },
-
   registerText: {
     color: colors.text,
   },
-
   registerLink: {
     color: colors.mainGreen,
     fontWeight: "600",
