@@ -532,8 +532,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 90,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 12,
     paddingHorizontal: 14,
     backgroundColor: colors.mainGreen,
     borderBottomWidth: 1,
@@ -544,9 +544,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backText: {
-    fontSize: 28,
+    fontSize: 40,
     color: colors.background,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   headerCenter: {
     flex: 1,
