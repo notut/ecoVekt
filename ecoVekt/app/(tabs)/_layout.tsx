@@ -6,6 +6,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function TabLayout() {
   const { userNameSession, isLoading } = useAuthSession();
@@ -68,10 +69,12 @@ function TabLayout() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthContextProviderm>
-        <TabLayout />
-      </AuthContextProviderm>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthContextProviderm>
+          <TabLayout />
+        </AuthContextProviderm>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
