@@ -9,8 +9,6 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { auth, db } from "@/firebaseConfig";
 import { useAuthSession } from "@/providers/authctx";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -23,6 +21,7 @@ import { BottomLeaves } from "@/components/Bottom_leaves";
 import { TopLeaf } from "@/components/top_leaf";
 import { colors } from "@/components/colors";
 import { PasswordInput } from "@/components/passwordInput";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthenticationScreen() {
   const { signIn } = useAuthSession();
@@ -120,7 +119,7 @@ export default function AuthenticationScreen() {
 
   // SIGNUP-VISNING
   return (
-    <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}>
+    <SafeAreaView>
       <View style={styles.container}>
         {/* NEDERSTE BLADER */}
         <View style={styles.leaves}>
