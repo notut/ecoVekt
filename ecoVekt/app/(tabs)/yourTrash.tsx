@@ -1,26 +1,26 @@
 // app/(tabs)/yourTrash.tsx
 
-import React, { useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
-  View,
   TouchableOpacity,
-  Alert,
+  View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
 import { Swipeable } from "react-native-gesture-handler";
 
-import { auth, db } from "../../firebaseConfig";
-import WasteCard from "@/components/wasteCard";
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress";
+import WasteCard from "@/components/wasteCard";
 import { MaterialIcons } from "@expo/vector-icons";
+import { auth, db } from "../../firebaseConfig";
 
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
@@ -183,19 +183,16 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.push("/(tabs)/logWeight")}        
-        onProfilePress={() => {}}
+        onBackPress={() => router.push("/(tabs)/logWeight")}
+        // 🔑 Linked profile navigation
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
           height: 80,
-          justifyContent: "flex-start",
           overflow: "hidden",
           paddingLeft: 10,
         }}
         titleStyle={{
           fontSize: 20,
-          marginTop: 40,
-          textAlign: "left",
-          alignSelf: "flex-start",
           color: "#FFFFFF",
           fontWeight: "600",
         }}

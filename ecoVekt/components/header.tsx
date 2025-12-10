@@ -1,7 +1,14 @@
+import { colors } from "@/components/colors";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { View, Text, Pressable, StyleSheet, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+// 💡 1. Import useRouter from expo-router
+import {
+    Poppins_600SemiBold,
+    useFonts,
+} from "@expo-google-fonts/poppins";
+import { useRouter } from "expo-router";
 
 type HeaderProps = {
   title: string;

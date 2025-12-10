@@ -1,14 +1,10 @@
 // skjermen som skal registrere vekt
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { colors } from "@/components/colors"; // henter fargene herfra
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
-import { auth } from "../../firebaseConfig";
-import { colors } from "@/components/colors"; // henter fargene herfra 
-import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 type RouteParams = {
   trashId?: string;
@@ -23,7 +19,7 @@ export default function RegistrerVekt() {
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  
+
   const handleFullfor = async () => {
     if (!trashTitle) {
       Alert.alert("Feil", "Avfallstype mangler.");
@@ -76,8 +72,9 @@ export default function RegistrerVekt() {
     <View style={styles.root}>
       <Header
         title="Registrer vekt"
-        onBackPress={() => router.push("/(tabs)/chooseWaste")}        
-        onProfilePress={() => {}}
+        onBackPress={() => router.push("/(tabs)/chooseWaste")}
+        // 💡 FIX: Link the profile icon to the profile page
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
          height: 80,
         justifyContent: "flex-start",
@@ -181,14 +178,14 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",  // gjør at ikon + tekst står midtstilt som i bildet
+    justifyContent: "center",
     marginBottom: 8,
   },
-  
+
   labelIcon: {
     marginRight: 8,
   },
-  
+
   label: {
     fontSize: 18,
     color: colors.text,
@@ -207,8 +204,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 4,
     fontFamily: "Inter_400Regular",
+    marginBottom: 4,
   },
 
   infoTitle: {
