@@ -37,11 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
   onProfilePress,
   containerStyle,
   titleStyle,
-  title,
-  onBackPress,
-  onProfilePress,
-  containerStyle,
-  titleStyle,
 }) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -111,9 +106,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Ionicons name="person" size={18} color={ICON_COLOR} />
           </View>
         </Pressable>
-      </View>
-    </View>
-  );
       </View>
     </View>
   );
