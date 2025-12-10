@@ -77,7 +77,7 @@ export default function RegistrerVekt() {
     <View style={styles.root}>
       <Header
         title="Registrer vekt"
-        onBackPress={() => router.push("/(tabs)/chooseWaste")}
+        onBackPress={() => router.push("/(tabs)/chooseWaste")}        
         onProfilePress={() => {}}
         containerStyle={{
           height: 80,

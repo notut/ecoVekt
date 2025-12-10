@@ -183,7 +183,7 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.push("/(tabs)/logWeight")}
+        onBackPress={() => router.push("/(tabs)/logWeight")}        
         onProfilePress={() => {}}
         containerStyle={{
           height: 80,
