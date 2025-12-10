@@ -183,19 +183,16 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.push("/(tabs)/logWeight")}        
-        onProfilePress={() => {}}
+        onBackPress={() => router.push("/(tabs)/logWeight")}
+        // 🔑 Linked profile navigation
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
           height: 80,
-          // FIX: Removed justifyContent: "flex-start"
           overflow: "hidden",
           paddingLeft: 10,
         }}
         titleStyle={{
           fontSize: 20,
-          // FIX: Removed marginTop: 40 (for vertical centering)
-          // FIX: Removed textAlign: "left" (for horizontal centering)
-          // FIX: Removed alignSelf: "flex-start" (for vertical/horizontal centering)
           color: "#FFFFFF",
           fontWeight: "600",
         }}
