@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 
-import { colors } from "@/components/colors"; // henter fargene herfra 
+import { colors } from "@/components/colors"; // henter fargene herfra
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -23,7 +23,7 @@ export default function RegistrerVekt() {
   const [saving, setSaving] = useState(false);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
-  
+
   const handleFullfor = async () => {
     if (!trashTitle) {
       Alert.alert("Feil", "Avfallstype mangler.");
@@ -76,19 +76,17 @@ export default function RegistrerVekt() {
     <View style={styles.root}>
       <Header
         title="Registrer vekt"
-        onBackPress={() => router.push("/(tabs)/chooseWaste")}        
-        onProfilePress={() => {}}
+        onBackPress={() => router.push("/(tabs)/chooseWaste")}
+        // 💡 FIX: Link the profile icon to the profile page
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
           height: 80,
-          // Horizontal alignment removed (was causing centering issues)
           overflow: "hidden",
           paddingLeft: 10,
           backgroundColor: colors.mainGreen,
         }}
         titleStyle={{
           fontSize: 20,
-          // CRITICAL FIX: Removed marginTop: 40 to allow vertical centering
-          // Horizontal alignment removed (was causing centering issues)
           color: "#FFFFFF",
           fontWeight: "600",
         }}
@@ -182,11 +180,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  
+
   labelIcon: {
     marginRight: 8,
   },
-  
+
   label: {
     fontSize: 18,
     color: colors.text,
@@ -205,8 +203,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 4,
     fontFamily: "Inter_400Regular",
+    marginBottom: 4,
   },
 
   infoTitle: {
