@@ -119,7 +119,7 @@ export default function AuthenticationScreen() {
 
   // SIGNUP-VISNING
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         {/* NEDERSTE BLADER */}
         <View style={styles.leaves}>

@@ -43,7 +43,7 @@ export const LoginScreen: React.FC = () => {
 
   //JSX returnerer komponentene på skjermen
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         {/* TOPP BLAD */}
         <TopLeaf />

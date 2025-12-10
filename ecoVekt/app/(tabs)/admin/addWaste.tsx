@@ -170,7 +170,7 @@ export default function AddWasteScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#f8fafc", paddingTop: 80 },
+  screen: { flex: 1, backgroundColor: "#ffffff", paddingTop: 80 },
   header: {
     height: 50,
     paddingHorizontal: 16,
