@@ -40,24 +40,24 @@ export default function ProfilePage(): React.ReactElement {
   const router = useRouter(); // navigator
 
   // Lokale state-variabler 
-  const [trashItems, setTrashItems] = useState<TrashItemType[]>([]); // alle hentede elementer
-  const [loading, setLoading] = useState(false); // loader for diagram / data
+  const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
+  const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<
     { name: string; population: number; color: string }[]
-  >([]); // data til kake-diagrammet
-  const [tooltipText, setTooltipText] = useState<string>(""); // hjelpetekst 
-  const [selectedWaste, setSelectedWaste] = useState<string[]>([]); // brukervalgt avfallstyper
-  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null); // valgt slice i diagram
-  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser); // aktiv bruker
+  >([]);
+  const [tooltipText, setTooltipText] = useState<string>("");
+  const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
+  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
   const [profile, setProfile] = useState<{
     fullName?: string;
     companyName?: string;
     employeeNumber?: string;
     email?: string;
-  } | null>(null); // brukerprofil
-  const [profileLoading, setProfileLoading] = useState<boolean>(false); // loader for profil
-  const [profileError, setProfileError] = useState<string | null>(null); // feil ved henting av profil
-  
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
   // basert på norske sorteringsfarger 
   const wasteColorMap: Record<string, string> = {
     mat: "#01A04C",            
@@ -75,25 +75,23 @@ export default function ProfilePage(): React.ReactElement {
     isolasjon: "#6B8F71",
     glassMetall: "#01C3A7",
     isopor: "#921E80",
-    elektronikk: "#fba910ff",
+    elektronikk: "#fba910",
     batteri: "#E11D48",
     lyspærer: "#E11D48",
-    medisinsk: "#ede900ff",
-    radioaktivt: "#f7ff04ff",
+    medisinsk: "#ede900",
+    radioaktivt: "#f7ff04",
     gummi: "#6B7A75",
     hageavfall: "#01A04C",
     matavfall: "#01A04C",
     restavfall: "#2E2E2E",
 
-    default: colors.mainGreen, // fallback hvis ingen match
+    default: colors.mainGreen,
   };
 
-  // Henter korrekt farge for en avfallstype
   const colorForWasteType = (type?: string | null): string => {
     if (!type) return wasteColorMap["rest"];
     const t = type.toLowerCase().trim();
 
-    // eksakte navn slik de vises i UI
     switch (t) {
       case "batteri": return wasteColorMap["batteri"];
       case "elektronikk": return wasteColorMap["elektronikk"];
@@ -116,7 +114,6 @@ export default function ProfilePage(): React.ReactElement {
       case "trevirke": return wasteColorMap["trevirke"];
     }
 
-    // keyword-basert fallback 
     if (t.includes("mat") || t.includes("bio") || t.includes("organisk")) return wasteColorMap["mat"];
     if (t.includes("plast") || t.includes("isopor")) return wasteColorMap["plast"];
     if (t.includes("papir") || t.includes("papp") || t.includes("kartong")) return wasteColorMap["papir"];
@@ -139,7 +136,6 @@ export default function ProfilePage(): React.ReactElement {
     return wasteColorMap["default"];
   };
 
-  // Lager SVG path for en sekt i et kakedigram 
   const createArcPath = (radius: number, startAngle: number, endAngle: number) => {
     const polar = (angle: number) => ({
       x: radius * Math.cos((angle * Math.PI) / 180),
@@ -151,145 +147,126 @@ export default function ProfilePage(): React.ReactElement {
     return `M 0 0 L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
   };
 
-  // Henter alle 'waste' dokumenter for gitt bruker og bygger chart-data 
- const getAllData = async (uid: string | null) => {
-  // vis loader
-  setLoading(true);
-  try {
-    // hvis ingen bruker: nullstill states
-    if (!uid) {
+  const getAllData = async (uid: string | null) => {
+    setLoading(true);
+    try {
+      if (!uid) {
+        setTrashItems([]);
+        setChartData([]);
+        setTooltipText("");
+        return;
+      }
+
+      const wasteCol = collection(db, "waste");
+      const q = query(wasteCol, where("userId", "==", uid));
+      const snap = await getDocs(q);
+
+      const results: TrashItemType[] = [];
+      snap.forEach((docSnap) => {
+        const d = docSnap.data() as any;
+        const weight = Number(d.amountKg ?? d.amount ?? d.weight ?? 0);
+
+        let createdAt: any = null;
+        if (d.timestamp && typeof d.timestamp.toDate === "function") {
+          createdAt = d.timestamp.toDate();
+        } else if (d.savedAt && typeof d.savedAt === "string") {
+          createdAt = new Date(d.savedAt);
+        } else {
+          createdAt = d.createdAt ?? null;
+        }
+
+        const type =
+          typeof d.wasteTitle === "string"
+            ? d.wasteTitle
+            : typeof d.type === "string"
+            ? d.type
+            : typeof d.wasteName === "string"
+            ? d.wasteName
+            : "Ukjent";
+
+        results.push({
+          id: docSnap.id,
+          weight,
+          createdAt,
+          type,
+        });
+      });
+
+      setTrashItems(results);
+
+      const totals: Record<string, number> = {};
+      results.forEach((r) => {
+        const t = r.type ?? "Ukjent";
+        totals[t] = (totals[t] || 0) + (Number(r.weight) || 0);
+      });
+
+      const types = Object.keys(totals).filter((k) => totals[k] > 0);
+      if (types.length > 0) {
+        const arr = types.map((t) => ({
+          name: t,
+          population: totals[t],
+          color: colorForWasteType(t),
+        }));
+        setChartData(arr);
+
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+        const total = totals[defaultPick] ?? 0;
+        setTooltipText(
+          `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
+        );
+      } else {
+        setChartData([]);
+        setTooltipText("");
+      }
+    } catch (e) {
+      console.error("Feil ved henting av waste:", e);
       setTrashItems([]);
       setChartData([]);
       setTooltipText("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserProfile = async (uid?: string | null) => {
+    if (!uid) {
+      setProfile(null);
+      setProfileError("Ingen bruker logget inn.");
       return;
     }
 
-    // hent dokumenter fra 'waste' hvor userId === uid
-    const wasteCol = collection(db, "waste");
-    const q = query(wasteCol, where("userId", "==", uid));
-    const snap = await getDocs(q);
+    setProfileLoading(true);
+    setProfileError(null);
 
-    // bygg resultater
-    const results: TrashItemType[] = [];
-    snap.forEach((docSnap) => {
-      const d = docSnap.data() as any;
-
-      // velg vektfelt, prioriter amountKg
-      const weight = Number(d.amountKg ?? d.amount ?? d.weight ?? 0);
-
-      // velg tid — håndter Firestore Timestamp eller eksisterende string
-      let createdAt: any = null;
-      if (d.timestamp && typeof d.timestamp.toDate === "function") {
-        // Firestore Timestamp -> Date
-        createdAt = d.timestamp.toDate();
-      } else if (d.savedAt && typeof d.savedAt === "string") {
-        // lagret som ISO-string
-        createdAt = new Date(d.savedAt);
+    try {
+      const userDocRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data() as any;
+        setProfile({
+          fullName: data.name ?? data.fullName ?? "",
+          companyName: data.companyName ?? data.company ?? "",
+          employeeNumber: data.employeeNumber ?? data.employeeNr ?? "",
+          email: data.email ?? auth.currentUser?.email ?? "",
+        });
       } else {
-        createdAt = d.createdAt ?? null;
+        setProfile({
+          fullName: "",
+          companyName: "",
+          employeeNumber: "",
+          email: auth.currentUser?.email ?? "",
+        });
       }
-
-      // velg type / tittel 
-      const type =
-        typeof d.wasteTitle === "string"
-          ? d.wasteTitle
-          : typeof d.type === "string"
-          ? d.type
-          : typeof d.wasteName === "string"
-          ? d.wasteName
-          : "Ukjent";
-
-      results.push({
-        id: docSnap.id,
-        weight,
-        createdAt,
-        type,
-      });
-    });
-
-    // lagre alle elementer
-    setTrashItems(results);
-
-    // summer vekt per type
-    const totals: Record<string, number> = {};
-    results.forEach((r) => {
-      const t = r.type ?? "Ukjent";
-      totals[t] = (totals[t] || 0) + (Number(r.weight) || 0);
-    });
-
-    // bygg chart-data fra totals, bruk colorForWasteType for farge
-    const types = Object.keys(totals).filter((k) => totals[k] > 0);
-    if (types.length > 0) {
-      const arr = types.map((t) => ({
-        name: t,
-        population: totals[t],
-        // bruk nasjonal farge direkte
-        color: colorForWasteType(t),
-      }));
-      setChartData(arr);
-
-      const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
-      const total = totals[defaultPick] ?? 0;
-      setTooltipText(
-        `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
-      );
-    } else {
-      // ingen data
-      setChartData([]);
-      setTooltipText("");
+    } catch (e) {
+      console.error("Kunne ikke hente brukerprofil:", e);
+      setProfileError("Feil ved henting av profil.");
+    } finally {
+      setProfileLoading(false);
     }
-  } catch (e) {
-    // på feil: nullstill og logg
-    console.error("Feil ved henting av waste:", e);
-    setTrashItems([]);
-    setChartData([]);
-    setTooltipText("");
-  } finally {
-    // skjul loader
-    setLoading(false);
-  }
-};
+  };
 
-const fetchUserProfile = async (uid?: string | null) => {
-  if (!uid){
-    setProfile(null);
-    setProfileError("Ingen bruker logget inn.");
-    return;
-  }
-
-  setProfileLoading(true);
-  setProfileError(null);
-
-  try {
-    const userDocRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userDocRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data() as any;
-      setProfile({
-        fullName: data.name ?? data.fullName ?? "",
-        companyName: data.companyName ?? data.company ?? "",
-        employeeNumber: data.employeeNumber ?? data.employeeNr ?? "",
-        email: data.email ?? auth.currentUser?.email ?? "",
-      });
-    } else {
-      setProfile({
-        fullName: "",
-        companyName: "",
-        employeeNumber: "",
-        email: auth.currentUser?.email ?? "",
-      });
-    }
-  } catch (e) {
-    console.error("Kunne ikke hente brukerprofil:", e);
-    setProfileError("Feil ved henting av profil.");
-  } finally {
-    setProfileLoading(false);
-  }
-      };
-
-  // Henter brukerens valgte avfallstyper fra users/{uid}.selectedWaste 
   const fetchSelectedWaste = async () => {
-    if (!currentUser) return setSelectedWaste([]); // hvis ingen bruker
+    if (!currentUser) return setSelectedWaste([]);
     try {
       const userDocRef = doc(db, "users", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
@@ -304,7 +281,6 @@ const fetchUserProfile = async (uid?: string | null) => {
     }
   };
 
-  // Lytter på auth-staten og henter data når bruker endres 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u);
@@ -314,7 +290,6 @@ const fetchUserProfile = async (uid?: string | null) => {
     return () => unsub();
   }, []);
 
-  // useFocusEffect hentes når screen får fokus (navigasjon) 
   useFocusEffect(
     useCallback(() => {
       fetchSelectedWaste();
@@ -323,11 +298,9 @@ const fetchUserProfile = async (uid?: string | null) => {
     }, [currentUser?.uid])
   );
 
-  // skjermbredde og radiuser for diagram 
   const screenWidth = Dimensions.get("window").width - 48;
   const radius = 90;
 
-  // logout-funksjon som også navigerer til auth-side 
   const handleLogout = async () => {
     try {
       await signOut();
@@ -340,11 +313,10 @@ const fetchUserProfile = async (uid?: string | null) => {
 
   return (
     <View style={styles.container}>
-
-      {/* EGEN HEADER - back-knapp navigerer til chooseWaste */}
+      {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.headerLeft} onPress={() => router.push("/(tabs)/chooseWaste")}>
-           <Text style={styles.backText}>‹</Text>
+          <Text style={styles.backText}>‹</Text>
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -357,23 +329,35 @@ const fetchUserProfile = async (uid?: string | null) => {
       {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
-        <View style={styles.box}>
+        <View style={[styles.box, { borderColor: colors.textBox, backgroundColor: colors.background }]}>
           <Text style={styles.boxTitle}>Din profil</Text>
-          <View style={styles.infoBox}>
+
+          <View style={[styles.infoBox, { borderColor: colors.darkGreen, backgroundColor: colors.background }]}>
             {profileLoading ? (
               <ActivityIndicator color={colors.mainGreen} />
             ) : profileError ? (
               <Text style={{ color: "red" }}>{profileError}</Text>
             ) : profile ? (
               <>
-                <Text style={styles.label}>Navn: {profile.fullName || "Ikke satt"}</Text>
-                <Text style={styles.label}>
-                  Firma: {profile.companyName || "Ikke satt"}
-                </Text>
-                <Text style={styles.label}>
-                  Ansatt-ID: {profile.employeeNumber || "Ikke satt"}
-                </Text>
-                <Text style={styles.label}>E-post: {profile.email || "Ikke satt"}</Text>
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Navn: </Text>
+                  <Text style={styles.valueText}>{profile.fullName || "Ikke satt"}</Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Firma: </Text>
+                  <Text style={styles.valueText}>{profile.companyName || "Ikke satt"}</Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Ansatt-ID: </Text>
+                  <Text style={styles.valueText}>{profile.employeeNumber || "Ikke satt"}</Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>E-post: </Text>
+                  <Text style={styles.valueText}>{profile.email || "Ikke satt"}</Text>
+                </View>
               </>
             ) : (
               <Text>Ingen profildata tilgjengelig.</Text>
@@ -406,10 +390,8 @@ const fetchUserProfile = async (uid?: string | null) => {
 
         <View style={{ alignItems: "center", marginBottom: 20 }}>
           {loading ? (
-            // loader mens vi venter på data
             <ActivityIndicator color={colors.mainGreen} />
           ) : chartData.length ? (
-            // vis kakedigrammet hvis vi har data
             <View style={{ width: screenWidth, alignItems: "center" }}>
               <Svg width={screenWidth} height={radius * 2 + 20}>
                 <G x={screenWidth / 2} y={radius + 10}>
@@ -443,7 +425,6 @@ const fetchUserProfile = async (uid?: string | null) => {
                 </G>
               </Svg>
 
-              {/* Tooltip for valgt sekt */}
               {selectedSlice ? (
                 <View style={styles.tooltip}>
                   <Text style={styles.tooltipText}>
@@ -453,7 +434,6 @@ const fetchUserProfile = async (uid?: string | null) => {
               ) : null}
             </View>
           ) : (
-            // fallback når ingen data finnes
             <Text style={styles.noData}>Ingen data for diagram</Text>
           )}
         </View>
@@ -531,6 +511,22 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
   },
+
+  // new styles for label/value rows
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  labelBold: {
+    fontWeight: "700",
+    color: colors.text,
+  },
+  valueText: {
+    fontWeight: "400",
+    color: colors.text,
+  },
+
   label: {
     color: colors.text,
     paddingVertical: 4,
