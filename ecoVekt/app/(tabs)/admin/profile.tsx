@@ -21,9 +21,6 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { PieChart } from "react-native-chart-kit";
-//import { SafeAreaView } from "react-native-safe-area-context";
-
 import Svg, { G, Path } from "react-native-svg";
 import { colors } from "@/components/colors";
 
@@ -153,10 +150,6 @@ export default function ProfilePage(): React.ReactElement {
   const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      const yourTrashCol = collection(db, "yourTrash");
-      const q = uid
-        ? query(yourTrashCol, where("uid", "==", uid))
-        : query(yourTrashCol);
       if (!uid) {
         setTrashItems([]);
         setChartData([]);
@@ -216,9 +209,7 @@ export default function ProfilePage(): React.ReactElement {
         }));
         setChartData(arr);
 
-        const defaultPick = types.includes("Restavfall")
-          ? "Restavfall"
-          : types[0];
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
         const total = totals[defaultPick] ?? 0;
         setTooltipText(
           `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
@@ -321,39 +312,6 @@ export default function ProfilePage(): React.ReactElement {
   };
 
   return (
-    <FlatList
-      data={trashItems}
-      keyExtractor={(i) => i.id}
-      // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
-      ListHeaderComponent={() => (
-        <View style={{ paddingBottom: 16 }}>
-          {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
-          <View style={styles.headerFull}>
-            <View style={styles.headerInner}>
-              {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-              >
-                <Text style={styles.backIcon}>‹</Text>
-              </Pressable>
-
-              <Text style={styles.headerTitle}>Administrator</Text>
-
-              {/* høyre side er tom (ingen profil-ikon) */}
-              <View style={styles.headerRight} />
-            </View>
-          </View>
-
-          {/* PROFILE BOX */}
-          <View style={styles.box}>
-            <Text style={styles.boxTitle}>Profil</Text>
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>Bedrift:</Text>
-              <Text style={styles.label}>Ansattnummer:</Text>
-              <Text style={styles.label}>Email:</Text>
-            </View>
-          </View>
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -368,12 +326,6 @@ export default function ProfilePage(): React.ReactElement {
         <View style={styles.headerRight} />
       </View>
 
-          <Pressable
-            onPress={() => router.push("./addWaste")}
-            style={styles.linkButton}
-          >
-            <Text style={styles.linkText}>Legg til mer</Text>
-          </Pressable>
       {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
@@ -426,18 +378,6 @@ export default function ProfilePage(): React.ReactElement {
             ))
           )}
         </View>
-      )}
-      // renderItem viser hvert trash-element
-      renderItem={({ item }) => (
-        <View style={styles.listCard}>
-          <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
-          <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
-          {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
-        </View>
-      )}
-      ListFooterComponent={() => (
-        <View style={{ paddingTop: 20 }}>
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
 
         {/* Link for å legge til flere avfallstyper */}
         <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
@@ -517,18 +457,12 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: colors.background 
   },
-  headerFull: {
-    width: "100%",
-    backgroundColor: colors.mainGreen,
-  },
-  headerInner: {
-    height: 64,
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 18,
+    paddingTop: 90,
     paddingBottom: 20,
     paddingHorizontal: 14,
     backgroundColor: colors.mainGreen,
@@ -661,12 +595,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutButton: {
-    backgroundColor: colors.mainGreen,
-    paddingVertical: 17,
-    marginTop: 20,
-    borderRadius: 20,
-    marginBottom: 40,
-    alignSelf: "center",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 50,
