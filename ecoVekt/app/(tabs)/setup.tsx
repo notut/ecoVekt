@@ -1,6 +1,7 @@
+import { Header } from "@/components/header";
 import { router } from "expo-router";
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -94,6 +95,13 @@ export default function SetupBusiness() {
       setIsSaving(false);
     }
   };
+  
+  // Custom back handler to navigate to the welcome page
+  const handleBack = () => {
+    // Navigate back to the welcome page route
+    router.replace("/welcome"); 
+  };
+
 
   if (loading || isSaving) {
     return (
@@ -108,24 +116,42 @@ export default function SetupBusiness() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Velg hvilke typer avfall du bruker i din bedrift:</Text>
-      
-      {/* 🔑 CHANGE: TagsList now receives the TITLE for selection checking/toggling */}
-      <TagsList
-        items={trashTypes}
-        selectedItems={selected}
-        // TagsList must be updated to pass item.title, not item.id
-        onToggle={toggleSelection} 
+      {/* 👈 onBackPress PROP added to show the chevron and call handleBack */}
+      <Header
+        title="Sett opp din bedrift" 
+        onBackPress={handleBack} 
+        // onProfilePress is still omitted
+        containerStyle={{
+          height: 80,
+          overflow: "hidden",
+          paddingLeft: 10,
+        }}
+        titleStyle={{
+          fontSize: 20,
+          color: "#FFFFFF",
+          fontWeight: "600",
+        }}
       />
-      
-      <Text style={styles.promptText}>Klar til å sette i gang?</Text>
+      {/* END HEADER */}
 
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleContinue}
-      >
-        <Text style={styles.buttonText}>Fortsett</Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <Text style={styles.title}>Velg hvilke typer avfall du bruker i din bedrift:</Text>
+        
+        <TagsList
+          items={trashTypes}
+          selectedItems={selected}
+          onToggle={toggleSelection} 
+        />
+        
+        <Text style={styles.promptText}>Klar til å sette i gang?</Text>
+
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={handleContinue}
+        >
+          <Text style={styles.buttonText}>Fortsett</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -133,11 +159,12 @@ export default function SetupBusiness() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: 'white',
-    // 🔑 CORRECTION: Removed marginTop: 120 and ensured paddingTop is sufficient
-    paddingTop: 40, // Keeping 40 as a good starting point for padding from the top
-    // marginTop: 120, <--- REMOVED THIS LINE
+  },
+  content: { 
+    flex: 1,
+    padding: 20,
+    paddingTop: 40,
   },
   center: {
     flex: 1,
@@ -147,34 +174,36 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     marginBottom: 20,
-    fontFamily: "Poppins_400Regular",
+    // fontFamily: "Poppins_400Regular",
     textAlign: "left",
     color: "#507C6D",
-    // Text automatically wraps unless specifically constrained (e.g., numberOfLines: 1)
   },
-  // ⬆️ UPDATED: bottom: 90 -> 120 (Moved up 30 units)
   promptText: {
     fontSize: 18,
-    fontFamily: "Poppins_400Regular",
+    // fontFamily: "Poppins_400Regular",
     color: "#507C6D",
     textAlign: "center",
     position: "absolute",
-    bottom: 150, // Moved up from 90
-    alignSelf: "center",
+    bottom: 150, 
+    left: 0, 
+    right: 0, 
+    paddingHorizontal: 20,
   },
-  // ⬆️ UPDATED: bottom: 30 -> 60 (Moved up 30 units)
   button: {
     position: "absolute",
-    bottom: 90, // Moved up from 30
+    bottom: 90, 
     alignSelf: "center",
     backgroundColor: "#507C6D",
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 12,
+    left: 20, 
+    right: 20,
+    alignItems: 'center',
   },
   buttonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Poppins_500Medium",
+    // fontFamily: "Poppins_500Medium",
   },
 });

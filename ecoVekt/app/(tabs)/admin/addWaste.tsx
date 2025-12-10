@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    justifyContent: "flex-start", // ← venstrejustert som i SetupBusiness
+    justifyContent: "flex-start", 
   },
 
   chip: {
