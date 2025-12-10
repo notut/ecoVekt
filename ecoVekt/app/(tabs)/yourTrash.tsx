@@ -21,6 +21,7 @@ import { StepProgress } from "@/components/stepProgress";
 import WasteCard from "@/components/wasteCard";
 import { MaterialIcons } from "@expo/vector-icons";
 import { auth, db } from "../../firebaseConfig";
+import { BottomLeaves } from "@/components/Bottom_leaves";
 
 const PRIMARY = "#6C8C76";
 const TEXT_DARK = "#486258";
@@ -203,64 +204,60 @@ export default function YourTrash() {
         <StepProgress steps={steps} currentStep={3} />
       </View>
 
-      <ScrollView
-        style={styles.list}
-        contentContainerStyle={{ paddingBottom: 30 }}
+      {aggregated.length === 0 ? (
+        <Text style={styles.empty}>
+          Ingen avfall registrert enda. Gå tilbake og registrer noe ♻️
+        </Text>
+      ) : (
+        aggregated.map((item) => (
+          <Swipeable
+            key={item.key}
+            renderRightActions={() => (
+              <View style={styles.deleteContainer}>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.key)}
+                >
+                  <MaterialIcons name="delete" size={32} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          >
+            <WasteCard
+              item={{
+                title: item.wasteTitle,
+                description:
+                  item.count > 1
+                    ? `${item.totalKg} kg ( ${item.count} registreringer )`
+                    : `${item.totalKg} kg`,
+                imageUrl: item.imageUrl ?? null,
+              }}
+              onSelect={() => {}}
+              compact
+            />
+          </Swipeable>
+        ))
+      )}
+
+      {/* Mer avfall – beholder localstorage, går tilbake til valg av avfall */}
+      <TouchableOpacity
+        style={styles.moreButton}
+        onPress={() => router.push("/(tabs)/chooseWaste")}
       >
-        {aggregated.length === 0 ? (
-          <Text style={styles.empty}>
-            Ingen avfall registrert enda. Gå tilbake og registrer noe ♻️
-          </Text>
-        ) : (
-          aggregated.map((item) => (
-            <Swipeable
-              key={item.key}
-              renderRightActions={() => (
-                <View style={styles.deleteContainer}>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDelete(item.key)}
-                  >
-                        <MaterialIcons name="delete" size={32} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            >
-              <WasteCard
-                item={{
-                  title: item.wasteTitle,
-                  description:
-                    item.count > 1
-                      ? `${item.totalKg} kg ( ${item.count} registreringer )`
-                      : `${item.totalKg} kg`,
-                  imageUrl: item.imageUrl ?? null,
-                }}
-                onSelect={() => {}}
-                compact
-              />
-            </Swipeable>
-          ))
-        )}
+        <Text style={styles.moreButtonText}>Legg til mer</Text>
+      </TouchableOpacity>
 
-        {/* Mer avfall – beholder localstorage, går tilbake til valg av avfall */}
-        <TouchableOpacity
-          style={styles.moreButton}
-          onPress={() => router.push("/(tabs)/chooseWaste")}
-        >
-          <Text style={styles.moreButtonText}>Mer avfall</Text>
-        </TouchableOpacity>
-
-        {/* Fullfør – sender til Firestore og tømmer localstorage */}
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleFullfor}
-          disabled={saving || aggregated.length === 0}
-        >
-          <Text style={styles.nextButtonText}>
-            {saving ? "Lagrer..." : "Fullfør"}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+      {/* Fullfør – sender til Firestore og tømmer localstorage */}
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={handleFullfor}
+        disabled={saving || aggregated.length === 0}
+      >
+        <Text style={styles.nextButtonText}>
+          {saving ? "Lagrer..." : "Fullfør"}
+        </Text>
+      </TouchableOpacity>
+      <BottomLeaves />
     </View>
   );
 }
@@ -305,7 +302,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     alignItems: "center",
-    marginHorizontal: 20,
+    marginHorizontal: 120,
     marginTop: 10,
   },
   moreButtonText: {
@@ -319,7 +316,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 12,
-    marginHorizontal: 20,
+    marginHorizontal: 120,
   },
   nextButtonText: {
     fontSize: 20,
