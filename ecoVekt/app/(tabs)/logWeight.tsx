@@ -10,7 +10,6 @@ import { auth } from "../../firebaseConfig";
 import { colors } from "@/components/colors"; // henter fargene herfra 
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
@@ -80,19 +79,20 @@ export default function RegistrerVekt() {
         onBackPress={() => router.back()}
         onProfilePress={() => {}}
         containerStyle={{
-          height: 80,
-          justifyContent: "flex-start",
-          overflow: "hidden",
+         height: 80,
+        justifyContent: "flex-start",
+        overflow: "hidden",
           paddingLeft: 10,
           backgroundColor: colors.mainGreen,
         }}
         titleStyle={{
-          fontSize: 20,
-          marginTop: 40,
-          textAlign: "left",
-          alignSelf: "flex-start",
-          color: "#FFFFFF",
-          fontWeight: "600",
+          fontSize: 25,//endret dette så teksten er større
+        marginTop: 30, //endret dette så teksten kommer høyere
+        textAlign: "center",  //sentrerer overskriften
+        alignSelf: "flex-start",
+        color: "#FFFFFF",
+        fontWeight: "600",
+      
         }}
       />
 
