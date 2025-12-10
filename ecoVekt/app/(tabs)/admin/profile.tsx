@@ -24,11 +24,10 @@ import {
 import Svg, { G, Path } from "react-native-svg";
 import { colors } from "@/components/colors";
 
-// Firebase-instanser (auth + firestore) 
 const auth = getAuth();
 const db = getFirestore();
 
-// Type for ett avfalls-element 
+// Type for ett avfalls-element
 type TrashItemType = {
   id: string;
   weight: number;
@@ -40,50 +39,138 @@ export default function ProfilePage(): React.ReactElement {
   const { signOut } = useAuthSession(); // logout-funksjon fra context
   const router = useRouter(); // navigator
 
-  // Lokale state-variabler 
-  const [trashItems, setTrashItems] = useState<TrashItemType[]>([]); // alle hentede elementer
-  const [loading, setLoading] = useState(false); // loader for diagram / data
+  // Lokale state-variabler
+  const [trashItems, setTrashItems] = useState<TrashItemType[]>([]);
+  const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<
     { name: string; population: number; color: string }[]
-  >([]); // data til kake-diagrammet
-  const [tooltipText, setTooltipText] = useState<string>(""); // hjelpetekst (kan vises)
-  const [selectedWaste, setSelectedWaste] = useState<string[]>([]); // brukervalgt avfallstyper
-  const [selectedSlice, setSelectedSlice] = useState<{ name: string; value: number } | null>(null); // valgt slice i diagram
-  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser); // aktiv bruker
+  >([]);
+  const [tooltipText, setTooltipText] = useState<string>("");
+  const [selectedWaste, setSelectedWaste] = useState<string[]>([]);
+  const [selectedSlice, setSelectedSlice] = useState<{
+    name: string;
+    value: number;
+  } | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(auth.currentUser);
+  const [profile, setProfile] = useState<{
+    fullName?: string;
+    companyName?: string;
+    employeeNumber?: string;
+    email?: string;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Fargepalett for diagrammet 
-  const hexPalette = [
-    "#6B8F71",
-    "#FFD400",
-    "#3B82F6",
-    "#10B981",
-    "#D97706",
-    "#9CA3AF",
-    "#7C3AED",
-    "#A0AEC0",
-    "#E11D48",
-    "#F59E0B",
-    "#84CC16",
-    "#06B6D4",
-    "#8B5CF6",
-    "#EF4444",
-    "#F97316",
-    "#34D399",
-    "#60A5FA",
-    "#F472B6",
-    "#A78BFA",
-    "#FDE68A",
-  ];
+  // basert på norske sorteringsfarger
+  const wasteColorMap: Record<string, string> = {
+    mat: "#01A04C",
+    plast: "#921E80",
+    papir: "#0082BE",
+    glass: "#01C3A7",
+    metall: "#5A6E77",
+    farlig: "#E11D48",
+    rest: "#2E2E2E",
 
-  // Genererer n farger ved å sykle gjennom paletten 
-  const generateColorsHex = (n: number) => {
-    const out: string[] = [];
-    for (let i = 0; i < n; i++) out.push(hexPalette[i % hexPalette.length]);
-    return out;
+    tekstil: "#A78BFA",
+    trevirke: "#A0703A",
+    porselen: "#8B8F90",
+    gips: "#6B7A75",
+    isolasjon: "#6B8F71",
+    glassMetall: "#01C3A7",
+    isopor: "#921E80",
+    elektronikk: "#fba910",
+    batteri: "#E11D48",
+    lyspærer: "#E11D48",
+    medisinsk: "#ede900",
+    radioaktivt: "#f7ff04",
+    gummi: "#6B7A75",
+    hageavfall: "#01A04C",
+    matavfall: "#01A04C",
+    restavfall: "#2E2E2E",
+
+    default: colors.mainGreen,
   };
 
-  // Lager SVG path for en sekt (arc) i et kakedigram 
-  const createArcPath = (radius: number, startAngle: number, endAngle: number) => {
+  const colorForWasteType = (type?: string | null): string => {
+    if (!type) return wasteColorMap["rest"];
+    const t = type.toLowerCase().trim();
+
+    switch (t) {
+      case "batteri":
+        return wasteColorMap["batteri"];
+      case "elektronikk":
+        return wasteColorMap["elektronikk"];
+      case "farlig avfall":
+        return wasteColorMap["farlig"];
+      case "gips":
+        return wasteColorMap["gips"];
+      case "glass og metall":
+        return wasteColorMap["glassMetall"];
+      case "gummi":
+        return wasteColorMap["gummi"];
+      case "hageavfall":
+        return wasteColorMap["hageavfall"];
+      case "isolasjon":
+        return wasteColorMap["isolasjon"];
+      case "isopor":
+        return wasteColorMap["isopor"];
+      case "klær og tekstil":
+        return wasteColorMap["tekstil"];
+      case "lyspærer og lysrør":
+        return wasteColorMap["lyspærer"];
+      case "matavfall":
+        return wasteColorMap["matavfall"];
+      case "medisinsk avfall":
+        return wasteColorMap["medisinsk"];
+      case "papp og papir":
+        return wasteColorMap["papir"];
+      case "plastemballasje":
+        return wasteColorMap["plast"];
+      case "porselen og keramikk":
+        return wasteColorMap["porselen"];
+      case "radioaktivt avfall":
+        return wasteColorMap["radioaktivt"];
+      case "restavfall":
+        return wasteColorMap["restavfall"];
+      case "trevirke":
+        return wasteColorMap["trevirke"];
+    }
+
+    if (t.includes("mat") || t.includes("bio") || t.includes("organisk"))
+      return wasteColorMap["mat"];
+    if (t.includes("plast") || t.includes("isopor"))
+      return wasteColorMap["plast"];
+    if (t.includes("papir") || t.includes("papp") || t.includes("kartong"))
+      return wasteColorMap["papir"];
+    if (t.includes("glass")) return wasteColorMap["glass"];
+    if (t.includes("metall") || t.includes("metal"))
+      return wasteColorMap["metall"];
+    if (
+      t.includes("farlig") ||
+      t.includes("kjemisk") ||
+      t.includes("batteri") ||
+      t.includes("elektronikk") ||
+      t.includes("lyspære")
+    )
+      return wasteColorMap["farlig"];
+    if (t.includes("tekstil") || t.includes("klær"))
+      return wasteColorMap["tekstil"];
+    if (t.includes("tre") || t.includes("virke"))
+      return wasteColorMap["trevirke"];
+    if (t.includes("porsel") || t.includes("keramikk"))
+      return wasteColorMap["porselen"];
+    if (t.includes("hage")) return wasteColorMap["hageavfall"];
+    if (t.includes("medisinsk")) return wasteColorMap["medisinsk"];
+    if (t.includes("radio")) return wasteColorMap["radioaktivt"];
+
+    return wasteColorMap["default"];
+  };
+
+  const createArcPath = (
+    radius: number,
+    startAngle: number,
+    endAngle: number
+  ) => {
     const polar = (angle: number) => ({
       x: radius * Math.cos((angle * Math.PI) / 180),
       y: radius * Math.sin((angle * Math.PI) / 180),
@@ -94,19 +181,16 @@ export default function ProfilePage(): React.ReactElement {
     return `M 0 0 L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
   };
 
-  // Henter alle 'waste' dokumenter for gitt bruker og bygger chart-data 
   const getAllData = async (uid: string | null) => {
-    setLoading(true); // vis loader
+    setLoading(true);
     try {
       if (!uid) {
-        // hvis ingen bruker: nullstill states
         setTrashItems([]);
         setChartData([]);
         setTooltipText("");
         return;
       }
 
-      // hent dokumenter fra 'waste' hvor userId === uid
       const wasteCol = collection(db, "waste");
       const q = query(wasteCol, where("userId", "==", uid));
       const snap = await getDocs(q);
@@ -114,62 +198,111 @@ export default function ProfilePage(): React.ReactElement {
       const results: TrashItemType[] = [];
       snap.forEach((docSnap) => {
         const d = docSnap.data() as any;
-        results.push({
-          id: docSnap.id,
-          weight: Number(d.amountKg ?? d.amount ?? d.weight ?? 0),
-          createdAt: d.createdAt ?? d.savedAt ?? d.timestamp ?? null,
-          type: typeof d.wasteTitle === "string"
+        const weight = Number(d.amountKg ?? d.amount ?? d.weight ?? 0);
+
+        let createdAt: any = null;
+        if (d.timestamp && typeof d.timestamp.toDate === "function") {
+          createdAt = d.timestamp.toDate();
+        } else if (d.savedAt && typeof d.savedAt === "string") {
+          createdAt = new Date(d.savedAt);
+        } else {
+          createdAt = d.createdAt ?? null;
+        }
+
+        const type =
+          typeof d.wasteTitle === "string"
             ? d.wasteTitle
             : typeof d.type === "string"
-            ? d.type
-            : typeof d.wasteName === "string"
-            ? d.wasteName
-            : "Ukjent",
+              ? d.type
+              : typeof d.wasteName === "string"
+                ? d.wasteName
+                : "Ukjent";
+
+        results.push({
+          id: docSnap.id,
+          weight,
+          createdAt,
+          type,
         });
       });
 
-      setTrashItems(results); // lagre alle elementer
+      setTrashItems(results);
 
-      // summer vekt per type
       const totals: Record<string, number> = {};
       results.forEach((r) => {
         const t = r.type ?? "Ukjent";
         totals[t] = (totals[t] || 0) + (Number(r.weight) || 0);
       });
 
-      // bygg chart-data fra totals
       const types = Object.keys(totals).filter((k) => totals[k] > 0);
       if (types.length > 0) {
-        const colorsArr = generateColorsHex(types.length);
-        const arr = types.map((t, i) => ({
+        const arr = types.map((t) => ({
           name: t,
           population: totals[t],
-          color: colorsArr[i],
+          color: colorForWasteType(t),
         }));
         setChartData(arr);
-        // velg default slice (prøver "Restavfall" hvis tilgjengelig)
-        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+
+        const defaultPick = types.includes("Restavfall")
+          ? "Restavfall"
+          : types[0];
         const total = totals[defaultPick] ?? 0;
-        setTooltipText(`Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`);
+        setTooltipText(
+          `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
+        );
       } else {
-        // ingen data
         setChartData([]);
         setTooltipText("");
       }
     } catch (e) {
       console.error("Feil ved henting av waste:", e);
-      // på feil: nullstill
       setTrashItems([]);
       setChartData([]);
       setTooltipText("");
     } finally {
-      setLoading(false); // skjul loader
+      setLoading(false);
     }
   };
 
-  // Henter brukerens valgte avfallstyper fra users/{uid}.selectedWaste 
+  const fetchUserProfile = async (uid?: string | null) => {
+    if (!uid) {
+      setProfile(null);
+      setProfileError("Ingen bruker logget inn.");
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError(null);
+
+    try {
+      const userDocRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data() as any;
+        setProfile({
+          fullName: data.name ?? data.fullName ?? "",
+          companyName: data.companyName ?? data.company ?? "",
+          employeeNumber: data.employeeNumber ?? data.employeeNr ?? "",
+          email: data.email ?? auth.currentUser?.email ?? "",
+        });
+      } else {
+        setProfile({
+          fullName: "",
+          companyName: "",
+          employeeNumber: "",
+          email: auth.currentUser?.email ?? "",
+        });
+      }
+    } catch (e) {
+      console.error("Kunne ikke hente brukerprofil:", e);
+      setProfileError("Feil ved henting av profil.");
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   const fetchSelectedWaste = async () => {
-    if (!currentUser) return setSelectedWaste([]); // hvis ingen bruker
+    if (!currentUser) return setSelectedWaste([]);
     try {
       const userDocRef = doc(db, "users", currentUser.uid);
       const userSnap = await getDoc(userDocRef);
@@ -184,28 +317,26 @@ export default function ProfilePage(): React.ReactElement {
     }
   };
 
-  // Lytter på auth-staten og henter data når bruker endres 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setCurrentUser(u);
       getAllData(u ? u.uid : null);
+      fetchUserProfile(u ? u.uid : null);
     });
     return () => unsub();
   }, []);
 
-  // useFocusEffect hentes når screen får fokus (navigasjon) 
   useFocusEffect(
     useCallback(() => {
       fetchSelectedWaste();
       getAllData(currentUser?.uid ?? null);
+      fetchUserProfile(currentUser?.uid ?? null);
     }, [currentUser?.uid])
   );
 
-  // skjermbredde og radiuser for diagram 
   const screenWidth = Dimensions.get("window").width - 48;
   const radius = 90;
 
-  // logout-funksjon som også navigerer til auth-side 
   const handleLogout = async () => {
     try {
       await signOut();
@@ -218,11 +349,13 @@ export default function ProfilePage(): React.ReactElement {
 
   return (
     <View style={styles.container}>
-
-      {/* EGEN HEADER - back-knapp navigerer til chooseWaste */}
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable style={styles.headerLeft} onPress={() => router.push("/(tabs)/chooseWaste")}>
-           <Text style={styles.backText}>‹</Text>
+        <Pressable
+          style={styles.headerLeft}
+          onPress={() => router.push("/(tabs)/chooseWaste")}
+        >
+          <Text style={styles.backText}>‹</Text>
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -235,12 +368,60 @@ export default function ProfilePage(): React.ReactElement {
       {/* Hoved-innhold i ScrollView */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Profil-boks */}
-        <View style={styles.box}>
-          <Text style={styles.boxTitle}>Profil</Text>
-          <View style={styles.infoBox}>
-            <Text style={styles.label}>Bedrift:</Text>
-            <Text style={styles.label}>Ansattnummer:</Text>
-            <Text style={styles.label}>Email:</Text>
+        <View
+          style={[
+            styles.box,
+            { borderColor: colors.textBox, backgroundColor: colors.background },
+          ]}
+        >
+          <Text style={styles.boxTitle}>Din profil</Text>
+
+          <View
+            style={[
+              styles.infoBox,
+              {
+                borderColor: colors.darkGreen,
+                backgroundColor: colors.background,
+              },
+            ]}
+          >
+            {profileLoading ? (
+              <ActivityIndicator color={colors.mainGreen} />
+            ) : profileError ? (
+              <Text style={{ color: "red" }}>{profileError}</Text>
+            ) : profile ? (
+              <>
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Navn: </Text>
+                  <Text style={styles.valueText}>
+                    {profile.fullName || "Ikke satt"}
+                  </Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Firma: </Text>
+                  <Text style={styles.valueText}>
+                    {profile.companyName || "Ikke satt"}
+                  </Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>Ansatt-ID: </Text>
+                  <Text style={styles.valueText}>
+                    {profile.employeeNumber || "Ikke satt"}
+                  </Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Text style={styles.labelBold}>E-post: </Text>
+                  <Text style={styles.valueText}>
+                    {profile.email || "Ikke satt"}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <Text>Ingen profildata tilgjengelig.</Text>
+            )}
           </View>
         </View>
 
@@ -251,7 +432,10 @@ export default function ProfilePage(): React.ReactElement {
             <Text style={styles.hintText}>Ingen valgte avfallstyper</Text>
           ) : (
             selectedWaste.map((t) => (
-              <View key={t} style={styles.chip}>
+              <View
+                key={t}
+                style={[styles.chip, { borderColor: colors.mainGreen }]}
+              >
                 <Text style={styles.chipText}>{t}</Text>
               </View>
             ))
@@ -259,7 +443,10 @@ export default function ProfilePage(): React.ReactElement {
         </View>
 
         {/* Link for å legge til flere avfallstyper */}
-        <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+        <Pressable
+          onPress={() => router.push("./addWaste")}
+          style={styles.linkButton}
+        >
           <Text style={styles.linkText}>Legg til mer</Text>
         </Pressable>
 
@@ -269,15 +456,16 @@ export default function ProfilePage(): React.ReactElement {
 
         <View style={{ alignItems: "center", marginBottom: 20 }}>
           {loading ? (
-            // loader mens vi venter på data
             <ActivityIndicator color={colors.mainGreen} />
           ) : chartData.length ? (
-            // vis kakedigrammet hvis vi har data
             <View style={{ width: screenWidth, alignItems: "center" }}>
               <Svg width={screenWidth} height={radius * 2 + 20}>
                 <G x={screenWidth / 2} y={radius + 10}>
                   {(() => {
-                    const total = chartData.reduce((acc, c) => acc + c.population, 0);
+                    const total = chartData.reduce(
+                      (acc, c) => acc + c.population,
+                      0
+                    );
                     let startAngle = -90;
                     return chartData.map((slice) => {
                       const angle = (slice.population / total) * 360;
@@ -306,17 +494,16 @@ export default function ProfilePage(): React.ReactElement {
                 </G>
               </Svg>
 
-              {/* Tooltip for valgt sekt */}
               {selectedSlice ? (
                 <View style={styles.tooltip}>
                   <Text style={styles.tooltipText}>
-                    Du har kastet {selectedSlice.value} kg {selectedSlice.name.toLowerCase()}.
+                    Du har kastet {selectedSlice.value} kg{" "}
+                    {selectedSlice.name.toLowerCase()}.
                   </Text>
                 </View>
               ) : null}
             </View>
           ) : (
-            // fallback når ingen data finnes
             <Text style={styles.noData}>Ingen data for diagram</Text>
           )}
         </View>
@@ -336,16 +523,16 @@ export default function ProfilePage(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.background 
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 18,
+    paddingTop: 90,
     paddingBottom: 20,
     paddingHorizontal: 14,
     backgroundColor: colors.mainGreen,
@@ -358,7 +545,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 28,
-    color: colors.background, 
+    color: colors.background,
     fontWeight: "600",
   },
   headerCenter: {
@@ -366,9 +553,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: "700",
-    color: colors.background, // tittel-farge
+    color: colors.background,
   },
   headerRight: {
     width: 48,
@@ -386,7 +573,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#2F3E36",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   infoBox: {
     borderWidth: 1,
@@ -394,6 +581,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
   },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  labelBold: {
+    fontWeight: "700",
+    color: colors.text,
+  },
+  valueText: {
+    fontWeight: "400",
+    color: colors.text,
+  },
+
   label: {
     color: colors.text,
     paddingVertical: 4,
@@ -402,19 +604,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     color: "#2F3E36",
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginTop: 4,
+    marginBottom: 12,
   },
   subText: {
     color: "#6B7A75",
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 12,
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 12,
   },
   chip: {
@@ -430,7 +633,7 @@ const styles = StyleSheet.create({
     color: "#2F3E36",
   },
   linkButton: {
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 18,
   },
   linkText: {

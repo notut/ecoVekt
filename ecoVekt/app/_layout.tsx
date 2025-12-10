@@ -1,4 +1,4 @@
-import { AuthContextProvider, useAuthSession } from "@/providers/authctx";
+import AuthSessionProvider, { useAuthSession } from "@/providers/authctx";
 import { router, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -10,8 +10,8 @@ function AuthGate() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inProtected = segments[0] == "(tabs)";
-    const onAuthScreen = segments[0] == "brukerregistrering";
+    const inProtected = segments[0] === "(tabs)";
+    const onAuthScreen = segments[0] === "brukerregistrering";
 
     if (!userNameSession && inProtected) {
       router.replace("/brukerregistrering/login");
@@ -23,15 +23,21 @@ function AuthGate() {
     }
   }, [userNameSession, isLoading, segments]);
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    />
+  );
 }
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthContextProvider>
+      <AuthSessionProvider>
         <AuthGate />
-      </AuthContextProvider>
+      </AuthSessionProvider>
     </SafeAreaProvider>
   );
 }

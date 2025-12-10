@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+//import { SafeAreaView } from "react-native-safe-area-context";
 
 //importer auth context
 import { useAuthSession } from "@/providers/authctx";
@@ -19,6 +19,7 @@ import { BottomLeaves } from "@/components/Bottom_leaves";
 import { TopLeaf } from "@/components/top_leaf";
 import { colors } from "@/components/colors";
 import { PasswordInput } from "@/components/passwordInput";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 //Login funksjon
 export const LoginScreen: React.FC = () => {
@@ -42,10 +43,7 @@ export const LoginScreen: React.FC = () => {
 
   //JSX returnerer komponentene på skjermen
   return (
-    <SafeAreaView
-      style={styles.safe}
-      edges={["left", "right", "bottom"]}
-    >
+    <SafeAreaView>
       <View style={styles.container}>
         {/* TOPP BLAD */}
         <TopLeaf />
@@ -75,7 +73,7 @@ export const LoginScreen: React.FC = () => {
               value={password}
               onChangeText={setPassword}
               placeholder="Passord"
-             />
+            />
           </View>
 
           {/* LOGIN KNAPP */}
@@ -186,8 +184,7 @@ const styles = StyleSheet.create({
   registerLink: {
     color: colors.mainGreen,
     fontWeight: "600",
-  }
+  },
 });
 
 export default LoginScreen;
-
