@@ -22,9 +22,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { PieChart } from "react-native-chart-kit";
-//import { SafeAreaView } from "react-native-safe-area-context";
-
+import Svg, { G, Path } from "react-native-svg";
 import { colors } from "@/components/colors";
 
 const auth = getAuth();
@@ -61,10 +59,15 @@ export default function ProfilePage(): React.ReactElement {
   const getAllData = async (uid: string | null) => {
     setLoading(true);
     try {
-      const yourTrashCol = collection(db, "yourTrash");
-      const q = uid
-        ? query(yourTrashCol, where("uid", "==", uid))
-        : query(yourTrashCol);
+      if (!uid) {
+        setTrashItems([]);
+        setChartData([]);
+        setTooltipText("");
+        return;
+      }
+
+      const wasteCol = collection(db, "waste");
+      const q = query(wasteCol, where("userId", "==", uid));
       const snap = await getDocs(q);
 
       const results: TrashItemType[] = [];
@@ -98,9 +101,7 @@ export default function ProfilePage(): React.ReactElement {
         }));
         setChartData(arr);
 
-        const defaultPick = types.includes("Restavfall")
-          ? "Restavfall"
-          : types[0];
+        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
         const total = totals[defaultPick] ?? 0;
         setTooltipText(
           `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
@@ -148,60 +149,25 @@ export default function ProfilePage(): React.ReactElement {
   };
 
   return (
-    <FlatList
-      data={trashItems}
-      keyExtractor={(i) => i.id}
-      // ListHeaderComponent viser alt innholdet over listen (profil, chips, pie osv.)
-      ListHeaderComponent={() => (
-        <View style={{ paddingBottom: 16 }}>
-          {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
-          <View style={styles.headerFull}>
-            <View style={styles.headerInner}>
-              {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.backButton}
-              >
-                <Text style={styles.backIcon}>‹</Text>
-              </Pressable>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable style={styles.headerLeft} onPress={() => router.push("/(tabs)/chooseWaste")}>
+          <Text style={styles.backText}>‹</Text>
+        </Pressable>
 
-              <Text style={styles.headerTitle}>Administrator</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Administrator</Text>
+        </View>
 
-              {/* høyre side er tom (ingen profil-ikon) */}
-              <View style={styles.headerRight} />
-            </View>
-          </View>
+        <View style={styles.headerRight} />
+      </View>
 
-          {/* PROFILE BOX */}
-          <View style={styles.box}>
-            <Text style={styles.boxTitle}>Profil</Text>
-            <View style={styles.infoBox}>
-              <Text style={styles.label}>Bedrift:</Text>
-              <Text style={styles.label}>Ansattnummer:</Text>
-              <Text style={styles.label}>Email:</Text>
-            </View>
-          </View>
-
-          {/* SELECTED WASTE */}
-          <Text style={styles.sectionTitle}>Valgt avfall</Text>
-          <View style={styles.chipContainer}>
-            {selectedWaste.map((t) => (
-              <View key={t} style={styles.chip}>
-                <Text style={styles.chipText}>{t}</Text>
-              </View>
-            ))}
-          </View>
-
-          <Pressable
-            onPress={() => router.push("./addWaste")}
-            style={styles.linkButton}
-          >
-            <Text style={styles.linkText}>Legg til mer</Text>
-          </Pressable>
-
-          {/* CHART */}
-          <Text style={styles.sectionTitle}>Total mengde avfall</Text>
-          <Text style={styles.subText}>Siste 4 uker</Text>
+      {/* Hoved-innhold i ScrollView */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* Profil-boks */}
+        <View style={[styles.box, { borderColor: colors.textBox, backgroundColor: colors.background }]}>
+          <Text style={styles.boxTitle}>Din profil</Text>
 
           <View style={{ alignItems: "center", marginBottom: 20 }}>
             {loading ? (
@@ -235,18 +201,72 @@ export default function ProfilePage(): React.ReactElement {
           {/* Litt padding mellom header og liste */}
           <View style={{ height: 8 }} />
         </View>
-      )}
-      // renderItem viser hvert trash-element
-      renderItem={({ item }) => (
-        <View style={styles.listCard}>
-          <Text style={styles.listTitle}>ID: {item.id.slice(0, 8)}</Text>
-          <Text style={styles.listText}>Vekt: {item.weight} kg</Text>
-          {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
+
+        {/* Link for å legge til flere avfallstyper */}
+        <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+          <Text style={styles.linkText}>Legg til mer</Text>
+        </Pressable>
+
+        {/* Diagramseksjon */}
+        <Text style={styles.sectionTitle}>Total mengde avfall</Text>
+        <Text style={styles.subText}>Siste 4 uker</Text>
+
+        <View style={{ alignItems: "center", marginBottom: 20 }}>
+          {loading ? (
+            <ActivityIndicator color={colors.mainGreen} />
+          ) : chartData.length ? (
+            <View style={{ width: screenWidth, alignItems: "center" }}>
+              <Svg width={screenWidth} height={radius * 2 + 20}>
+                <G x={screenWidth / 2} y={radius + 10}>
+                  {(() => {
+                    const total = chartData.reduce((acc, c) => acc + c.population, 0);
+                    let startAngle = -90;
+                    return chartData.map((slice) => {
+                      const angle = (slice.population / total) * 360;
+                      const endAngle = startAngle + angle;
+                      const d = createArcPath(radius, startAngle, endAngle);
+                      const key = slice.name;
+                      startAngle = endAngle;
+                      return (
+                        <Path
+                          key={key}
+                          d={d}
+                          fill={slice.color}
+                          stroke="#ffffff"
+                          strokeWidth={1}
+                          onPress={() =>
+                            setSelectedSlice(
+                              selectedSlice?.name === slice.name
+                                ? null
+                                : { name: slice.name, value: slice.population }
+                            )
+                          }
+                        />
+                      );
+                    });
+                  })()}
+                </G>
+              </Svg>
+
+              {selectedSlice ? (
+                <View style={styles.tooltip}>
+                  <Text style={styles.tooltipText}>
+                    Du har kastet {selectedSlice.value} kg {selectedSlice.name.toLowerCase()}.
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <Text style={styles.noData}>Ingen data for diagram</Text>
+          )}
         </View>
-      )}
-      ListFooterComponent={() => (
-        <View style={{ paddingTop: 20 }}>
-          <Pressable onPress={handleLogout} style={styles.logoutButton}>
+
+        {/* Logout-knapp */}
+        <View style={styles.logoutWrap}>
+          <Pressable
+            style={[styles.logoutButton, { backgroundColor: colors.mainGreen }]}
+            onPress={handleLogout}
+          >
             <Text style={styles.logoutText}>Logg ut</Text>
           </Pressable>
         </View>
@@ -262,22 +282,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 14,
   },
-  headerFull: {
-    width: "100%",
-    backgroundColor: colors.mainGreen,
-  },
-  headerInner: {
-    height: 64,
+
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
+    justifyContent: "space-between",
+    paddingTop: 90,
+    paddingBottom: 20,
+    paddingHorizontal: 14,
+    backgroundColor: colors.mainGreen,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lightGreen,
   },
-  backButton: {
-    position: "absolute",
-    left: 12,
-    top: 0,
-    bottom: 0,
+  headerLeft: {
+    width: 48,
     justifyContent: "center",
   },
   backIcon: {
@@ -414,12 +432,9 @@ const styles = StyleSheet.create({
   },
 
   logoutButton: {
-    backgroundColor: colors.mainGreen,
-    paddingVertical: 17,
-    marginTop: 20,
-    borderRadius: 20,
-    marginBottom: 40,
-    alignSelf: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 50,
     width: "70%",
   },
   logoutText: {
