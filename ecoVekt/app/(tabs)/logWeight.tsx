@@ -6,6 +6,9 @@ import { colors } from "@/components/colors"; // henter fargene herfra
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { auth } from "../../firebaseConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
