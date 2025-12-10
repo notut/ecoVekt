@@ -76,7 +76,7 @@ export default function RegistrerVekt() {
     <View style={styles.root}>
       <Header
         title="Registrer vekt"
-        onBackPress={() => router.back()}
+        onBackPress={() => router.push("/(tabs)/chooseWaste")}        
         onProfilePress={() => {}}
         containerStyle={{
          height: 80,
@@ -152,7 +152,7 @@ export default function RegistrerVekt() {
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            {saving ? "Lagrer..." : ""}
+            Fullfør{saving ? "Lagrer..." : ""}
           </Text>
         </TouchableOpacity>
       </View>
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
 
   fullforText: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: "500",
     color: colors.textBox,
     fontFamily: "Poppins_500Medium",
