@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+// 🔑 CHANGE: Removed ScrollView from imports
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 interface TrashType {
   id: string; // The Firebase Document ID (not used for selection state anymore)
@@ -16,7 +16,8 @@ interface TagsListProps {
 
 export default function TagsList({ items, selectedItems, onToggle }: TagsListProps) {
   return (
-    <ScrollView contentContainerStyle={styles.tagsContainer}>
+    // 🔑 CHANGE: Replaced ScrollView with View
+    <View style={styles.tagsContainer}> 
       {items.map((item) => {
         // 🔑 CHANGE 1: Check if the item's title is present in the selectedItems array
         const isSelected = selectedItems.includes(item.title);
@@ -33,16 +34,19 @@ export default function TagsList({ items, selectedItems, onToggle }: TagsListPro
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   tagsContainer: {
+    // 🔑 NOTE: These properties already handle wrapping correctly for a View
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
     paddingTop: 10,
+    // Add maxHeight if you want to explicitly limit the height when using View
+    // maxHeight: '80%', 
   },
   tag: {
     paddingVertical: 8,
@@ -58,10 +62,10 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 15,
     color: "#525252",
-    fontFamily: "Poppins_400regular",
+    // fontFamily: "Poppins_400regular",
   },
   tagTextSelected: {
     color: "#fff",
-    fontFamily: "Poppins_400regular",
+    // fontFamily: "Poppins_400regular",
   },
 });
