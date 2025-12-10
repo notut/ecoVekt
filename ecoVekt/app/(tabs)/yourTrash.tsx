@@ -153,7 +153,7 @@ list.forEach((e) => {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.back()}
+        onBackPress={() => router.push("/(tabs)/logWeight")}        
         onProfilePress={() => {}}
         containerStyle={{
           height: 80,
