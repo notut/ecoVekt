@@ -512,7 +512,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  // new styles for label/value rows
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -535,20 +534,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
     color: "#2F3E36",
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginTop: 4,
     marginBottom: 12,
   },
   subText: {
     color: "#6B7A75",
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 12,
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 12,
   },
   chip: {
@@ -564,7 +563,7 @@ const styles = StyleSheet.create({
     color: "#2F3E36",
   },
   linkButton: {
-    marginHorizontal: 14,
+    marginHorizontal: 35,
     marginBottom: 18,
   },
   linkText: {
