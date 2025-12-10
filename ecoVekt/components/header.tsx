@@ -2,6 +2,7 @@ import { colors } from "@/components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+    ActivityIndicator,
     Pressable,
     StatusBar,
     StyleSheet,
@@ -11,6 +12,11 @@ import {
     ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+// 1. Import Poppins fonts and useFonts
+import {
+    Poppins_600SemiBold, // Commonly used for headers
+    useFonts,
+} from "@expo-google-fonts/poppins";
 
 type HeaderProps  = {
     title: string;
@@ -22,6 +28,7 @@ type HeaderProps  = {
 
 const HEADER_BG = colors.mainGreen; 
 const ICON_COLOR = colors.background; 
+const FONT_FAMILY_BOLD = "Poppins_600SemiBold";
 
 export const Header: React.FC<HeaderProps> = ({
     title, 
@@ -31,6 +38,26 @@ export const Header: React.FC<HeaderProps> = ({
     titleStyle,
 }) => {
     const insets = useSafeAreaInsets();
+    
+    // 2. Load the Poppins font
+    const [fontsLoaded] = useFonts({
+        Poppins_600SemiBold,
+    });
+
+    // 3. Font Loading: Show a loading state if fonts are not loaded
+    if (!fontsLoaded) {
+        return (
+            <View style={[styles.root, { backgroundColor: HEADER_BG, height: 80 + insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+                <StatusBar 
+                    translucent
+                    backgroundColor="transparent"
+                    barStyle="light-content"
+                />
+                {/* Optional: Show a loading indicator in the header area */}
+                <ActivityIndicator size="small" color={ICON_COLOR} />
+            </View>
+        );
+    }
 
     // Components for balanced left/right layout
     const BackButton = onBackPress ? (
@@ -109,7 +136,7 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 16,
-      paddingBottom: 12, // <-- CORRECTED: Removed the syntax error here
+      paddingBottom: 12,
     },
     iconButton: {
       width: 32,
@@ -126,7 +153,9 @@ const styles = StyleSheet.create({
       flex: 1,
       textAlign: "center", // CRITICAL for inner centering
       fontSize: 24,
-      fontWeight: "600",
+      // 4. Apply the Poppins font family
+      fontFamily: FONT_FAMILY_BOLD, 
+      // Removed fontWeight: "600" as the font family handles the weight
       color: ICON_COLOR, 
     },
     profileButton: {
