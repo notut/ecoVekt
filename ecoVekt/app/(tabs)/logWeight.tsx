@@ -1,15 +1,14 @@
 // skjermen som skal registrere vekt
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { colors } from "@/components/colors"; // henter fargene herfra 
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
-import { auth } from "../../firebaseConfig";
-import { colors } from "@/components/colors"; // henter fargene herfra 
-import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { auth } from "../../firebaseConfig";
 
 type RouteParams = {
   trashId?: string;
@@ -81,16 +80,15 @@ export default function RegistrerVekt() {
         onProfilePress={() => {}}
         containerStyle={{
           height: 80,
-          justifyContent: "flex-start",
+          // Horizontal alignment removed (was causing centering issues)
           overflow: "hidden",
           paddingLeft: 10,
           backgroundColor: colors.mainGreen,
         }}
         titleStyle={{
           fontSize: 20,
-          marginTop: 40,
-          textAlign: "left",
-          alignSelf: "flex-start",
+          // CRITICAL FIX: Removed marginTop: 40 to allow vertical centering
+          // Horizontal alignment removed (was causing centering issues)
           color: "#FFFFFF",
           fontWeight: "600",
         }}
@@ -181,7 +179,7 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",  // gjør at ikon + tekst står midtstilt som i bildet
+    justifyContent: "center",
     marginBottom: 8,
   },
   
