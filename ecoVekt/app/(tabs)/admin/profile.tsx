@@ -23,7 +23,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { PieChart } from "react-native-chart-kit";
-import { SafeAreaView } from "react-native-safe-area-context";
+//import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
 
@@ -62,7 +62,9 @@ export default function ProfilePage(): React.ReactElement {
     setLoading(true);
     try {
       const yourTrashCol = collection(db, "yourTrash");
-      const q = uid ? query(yourTrashCol, where("uid", "==", uid)) : query(yourTrashCol);
+      const q = uid
+        ? query(yourTrashCol, where("uid", "==", uid))
+        : query(yourTrashCol);
       const snap = await getDocs(q);
 
       const results: TrashItemType[] = [];
@@ -96,9 +98,13 @@ export default function ProfilePage(): React.ReactElement {
         }));
         setChartData(arr);
 
-        const defaultPick = types.includes("Restavfall") ? "Restavfall" : types[0];
+        const defaultPick = types.includes("Restavfall")
+          ? "Restavfall"
+          : types[0];
         const total = totals[defaultPick] ?? 0;
-        setTooltipText(`Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`);
+        setTooltipText(
+          `Du har de tre siste månedene kastet ${total} kg ${defaultPick.toLowerCase()}.`
+        );
       } else {
         setChartData([]);
         setTooltipText("");
@@ -141,7 +147,6 @@ export default function ProfilePage(): React.ReactElement {
     router.replace("/brukerregistrering/autentication");
   };
 
- 
   return (
     <FlatList
       data={trashItems}
@@ -150,10 +155,13 @@ export default function ProfilePage(): React.ReactElement {
       ListHeaderComponent={() => (
         <View style={{ paddingBottom: 16 }}>
           {/* HEADER — erstattet med SafeAreaView for å dekke hele toppen */}
-          <SafeAreaView style={styles.headerFull}>
+          <View style={styles.headerFull}>
             <View style={styles.headerInner}>
               {/* valgfri back-knapp (fjern hvis du ikke ønsker den) */}
-              <Pressable onPress={() => router.back()} style={styles.backButton}>
+              <Pressable
+                onPress={() => router.back()}
+                style={styles.backButton}
+              >
                 <Text style={styles.backIcon}>‹</Text>
               </Pressable>
 
@@ -162,7 +170,7 @@ export default function ProfilePage(): React.ReactElement {
               {/* høyre side er tom (ingen profil-ikon) */}
               <View style={styles.headerRight} />
             </View>
-          </SafeAreaView>
+          </View>
 
           {/* PROFILE BOX */}
           <View style={styles.box}>
@@ -184,7 +192,10 @@ export default function ProfilePage(): React.ReactElement {
             ))}
           </View>
 
-          <Pressable onPress={() => router.push("./addWaste")} style={styles.linkButton}>
+          <Pressable
+            onPress={() => router.push("./addWaste")}
+            style={styles.linkButton}
+          >
             <Text style={styles.linkText}>Legg til mer</Text>
           </Pressable>
 
@@ -225,7 +236,6 @@ export default function ProfilePage(): React.ReactElement {
           <View style={{ height: 8 }} />
         </View>
       )}
-
       // renderItem viser hvert trash-element
       renderItem={({ item }) => (
         <View style={styles.listCard}>
@@ -234,8 +244,6 @@ export default function ProfilePage(): React.ReactElement {
           {item.type && <Text style={styles.listText}>Type: {item.type}</Text>}
         </View>
       )}
-
-      
       ListFooterComponent={() => (
         <View style={{ paddingTop: 20 }}>
           <Pressable onPress={handleLogout} style={styles.logoutButton}>
@@ -254,8 +262,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 14,
   },
-
-  //Header som dekker hele toppen 
   headerFull: {
     width: "100%",
     backgroundColor: colors.mainGreen,
@@ -411,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.mainGreen,
     paddingVertical: 17,
     marginTop: 20,
-    borderRadius:20,
+    borderRadius: 20,
     marginBottom: 40,
     alignSelf: "center",
     width: "70%",
@@ -421,6 +427,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
     fontSize: 16,
-
   },
 });

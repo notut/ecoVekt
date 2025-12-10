@@ -2,9 +2,11 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "allowJs": true,          // ✅ allow JS imports
-    "checkJs": false,         // optional: don’t type-check JS
-    "esModuleInterop": true,  // allows default imports from JS
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
     "paths": {
       "@/*": [
         "./*"

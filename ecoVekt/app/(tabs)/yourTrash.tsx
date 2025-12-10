@@ -30,7 +30,7 @@ type LocalEntry = {
   amountKg: number;
   userId?: string | null;
   savedAt?: string;
-  imageUrl?: string | null;   // 👈 NYTT
+  imageUrl?: string | null; // 👈 NYTT
 };
 
 type AggregatedEntry = {
@@ -39,7 +39,7 @@ type AggregatedEntry = {
   wasteTitle: string;
   totalKg: number;
   count: number;
-  imageUrl?: string | null;   // 👈 NYTT
+  imageUrl?: string | null; // 👈 NYTT
 };
 
 export default function YourTrash() {
@@ -64,25 +64,25 @@ export default function YourTrash() {
       // Aggreger per avfallstype (bruk id + tittel som nøkkel)
       const map: Record<string, AggregatedEntry> = {};
 
-list.forEach((e) => {
-  const title = e.wasteTitle ?? "Ukjent avfallstype";
-  const idPart = e.wasteId ?? "no-id";
-  const key = `${idPart}__${title}`;
+      list.forEach((e) => {
+        const title = e.wasteTitle ?? "Ukjent avfallstype";
+        const idPart = e.wasteId ?? "no-id";
+        const key = `${idPart}__${title}`;
 
-  if (!map[key]) {
-    map[key] = {
-      key,
-      wasteId: e.wasteId ?? null,
-      wasteTitle: title,
-      totalKg: 0,
-      count: 0,
-      imageUrl: e.imageUrl ?? null,   // 👈 lagre første ikon vi ser
-    };
-  }
+        if (!map[key]) {
+          map[key] = {
+            key,
+            wasteId: e.wasteId ?? null,
+            wasteTitle: title,
+            totalKg: 0,
+            count: 0,
+            imageUrl: e.imageUrl ?? null, // 👈 lagre første ikon vi ser
+          };
+        }
 
-  map[key].totalKg += e.amountKg;
-  map[key].count += 1;
-});
+        map[key].totalKg += e.amountKg;
+        map[key].count += 1;
+      });
 
       setAggregated(Object.values(map));
     } catch (err) {
@@ -186,20 +186,20 @@ list.forEach((e) => {
           </Text>
         ) : (
           aggregated.map((item) => (
-  <WasteCard
-    key={item.key}
-    item={{
-      title: item.wasteTitle,
-      description:
-        item.count > 1
-          ? `${item.totalKg} kg ( ${item.count} registreringer )`
-          : `${item.totalKg} kg`,
-      imageUrl: item.imageUrl ?? null, // hvis du senere legger til imageUrl i localstorage
-    }}
-    onSelect={() => {}}
-    compact
-  />
-))
+            <WasteCard
+              key={item.key}
+              item={{
+                title: item.wasteTitle,
+                description:
+                  item.count > 1
+                    ? `${item.totalKg} kg ( ${item.count} registreringer )`
+                    : `${item.totalKg} kg`,
+                imageUrl: item.imageUrl ?? null, // hvis du senere legger til imageUrl i localstorage
+              }}
+              onSelect={() => {}}
+              compact
+            />
+          ))
         )}
 
         {/* Mer avfall – beholder localstorage, går tilbake til valg av avfall */}

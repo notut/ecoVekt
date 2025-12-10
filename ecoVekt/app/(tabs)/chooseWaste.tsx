@@ -13,7 +13,6 @@ import WasteCard from "@/components/wasteCard";
 import { useFocusEffect, useRouter } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
 
-
 type TrashType = {
   id: string;
   title: string;
@@ -32,11 +31,7 @@ export default function ChooseWaste() {
   const router = useRouter();
 
   // 🔹 Stegene i prosessen – denne siden er alltid steg 1
-  const steps = [
-  { id: 1 },
-  { id: 2 },
-  { id: 3 },
-];
+  const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
   // 🔑 LØSNING: Bruk useFocusEffect i stedet for useEffect (med tom avhengighetsliste)
   // Dette sikrer at data hentes hver gang skjermen blir synlig/fokusert
@@ -86,14 +81,16 @@ export default function ChooseWaste() {
           setTrashTypes(types);
         } catch (err) {
           console.error("Error fetching trash types:", err);
-          setError("Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk.");
+          setError(
+            "Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk."
+          );
         } finally {
           setLoading(false);
         }
       };
 
       fetchTrashTypes();
-      
+
       // Valgfri cleanup-funksjon (kjører når skjermen mister fokus)
       return () => {};
     }, [])
@@ -145,20 +142,20 @@ export default function ChooseWaste() {
       >
         {trashTypes.map((item) => (
           // inne i ChooseWaste
-<WasteCard
-  key={item.id}
-  item={item}
-  onSelect={(selected: TrashType) => {
-    router.push({
-      pathname: "/(tabs)/logWeight",
-      params: {
-        trashId: selected.id,
-        trashTitle: selected.title,
-        imageUrl: selected.imageUrl ?? "",   // 👈 NY
-      },
-    });
-  }}
-/>
+          <WasteCard
+            key={item.id}
+            item={item}
+            onSelect={(selected: TrashType) => {
+              router.push({
+                pathname: "/(tabs)/logWeight",
+                params: {
+                  trashId: selected.id,
+                  trashTitle: selected.title,
+                  imageUrl: selected.imageUrl ?? "", // 👈 NY
+                },
+              });
+            }}
+          />
         ))}
       </ScrollView>
     </View>
@@ -197,8 +194,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   stepWrapper: {
-  alignItems: "center",
-  marginTop: 12,
-  marginBottom: 8, // lite mellomrom under
-},
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8, // lite mellomrom under
+  },
 });

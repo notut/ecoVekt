@@ -4,8 +4,7 @@ import { useRouter } from "expo-router";
 import { Header } from "@/components/header";
 import TopLeaf from "@/components/top_leaf";
 import BottomLeaves from "@/components/Bottom_leaves";
-import { colors } from "@/components/colors"; 
-
+import { colors } from "@/components/colors";
 
 type SuccessMessageProps = {
   redirectTo: string;
@@ -32,7 +31,6 @@ export default function SuccessMessage({
   }, [router]);
 
   return (
-
     //hente bottom leaves komponent, setter overskrift, ikon og underoverskriften.
     <View style={styles.root}>
       <TopLeaf />
@@ -56,7 +54,7 @@ export default function SuccessMessage({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background, 
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -70,12 +68,12 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 20,
-    color: colors.darkGreen, 
+    color: colors.darkGreen,
     textAlign: "center",
   },
   text: {
     fontSize: 16,
-    color: colors.text, 
+    color: colors.text,
     textAlign: "center",
   },
 });
