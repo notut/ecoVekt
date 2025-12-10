@@ -6,10 +6,6 @@ import { colors } from "@/components/colors"; // henter fargene herfra
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress"; // henter step progres herfra
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { auth } from "../../firebaseConfig";
-
 type RouteParams = {
   trashId?: string;
   trashTitle?: string;
@@ -80,15 +76,20 @@ export default function RegistrerVekt() {
         // 💡 FIX: Link the profile icon to the profile page
         onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
-          height: 80,
-          overflow: "hidden",
+         height: 80,
+        justifyContent: "flex-start",
+        overflow: "hidden",
           paddingLeft: 10,
           backgroundColor: colors.mainGreen,
         }}
         titleStyle={{
-          fontSize: 20,
-          color: "#FFFFFF",
-          fontWeight: "600",
+          fontSize: 25,//endret dette så teksten er større
+        marginTop: 30, //endret dette så teksten kommer høyere
+        textAlign: "center",  //sentrerer overskriften
+        alignSelf: "flex-start",
+        color: "#FFFFFF",
+        fontWeight: "600",
+      
         }}
       />
 
