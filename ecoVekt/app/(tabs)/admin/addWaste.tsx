@@ -170,7 +170,7 @@ export default function AddWasteScreen(): React.ReactElement {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#f8fafc", paddingTop: 80 },
+  screen: { flex: 1, backgroundColor: "#ffffff", paddingTop: 80 },
   header: {
     height: 50,
     paddingHorizontal: 16,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    justifyContent: "flex-start", // ← venstrejustert som i SetupBusiness
+    justifyContent: "flex-start", 
   },
 
   chip: {
