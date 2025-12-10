@@ -77,7 +77,7 @@ export default function RegistrerVekt() {
     <View style={styles.root}>
       <Header
         title="Registrer vekt"
-        onBackPress={() => router.back()}
+        onBackPress={() => router.push("/(tabs)/chooseWaste")}        
         onProfilePress={() => {}}
         containerStyle={{
           height: 80,
@@ -152,7 +152,7 @@ export default function RegistrerVekt() {
           disabled={saving}
         >
           <Text style={styles.fullforText}>
-            {saving ? "Lagrer..." : ""}
+            {saving ? "Lagrer..." : "Lagre"}
           </Text>
         </TouchableOpacity>
       </View>
