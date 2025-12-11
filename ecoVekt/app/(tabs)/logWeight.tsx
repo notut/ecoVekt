@@ -13,7 +13,7 @@ import { colors } from "@/components/colors";
 import { Header } from "@/components/header";
 import { StepProgress } from "@/components/stepProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, usePathname } from "expo-router";
 import { auth } from "../../firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomLeaves } from "@/components/Bottom_leaves";
@@ -32,6 +32,8 @@ type SavedWaste = {
 
 export default function RegistrerVekt() {
   const router = useRouter();
+  const pathname = usePathname();
+
   const { trashId, trashTitle, imageUrl } = useLocalSearchParams<RouteParams>();
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -132,7 +134,13 @@ export default function RegistrerVekt() {
       <Header
         title="Registrer vekt"
         onBackPress={() => router.push("/(tabs)/chooseWaste")}
-        onProfilePress={() => router.push("/(tabs)/admin/profile")}
+        //Henter historikk å gå tilbake til
+        onProfilePress={() =>
+          router.push({
+            pathname: "/(tabs)/admin/profile",
+            params: { from: pathname },
+          })
+        }
         containerStyle={{
           height: 80,
           overflow: "hidden",
