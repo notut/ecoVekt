@@ -207,11 +207,20 @@ export default function YourTrash() {
         <StepProgress steps={steps} currentStep={3} />
       </View>
 
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView
+        style={{ flex: 1, position: "relative", zIndex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 150,
+        }}
+      >
         {entries.length === 0 ? (
-          <Text style={styles.empty}>
-            Ingen avfall registrert enda. Gå tilbake og registrer noe ♻️
-          </Text>
+          <>
+            <Text style={styles.empty}>Ingen avfall registrert enda.</Text>
+            <Text style={[styles.empty, { marginBottom: 30 }]}>
+              Gå tilbake for å registrere noe først ♻️
+            </Text>
+          </>
         ) : (
           entries.map((item, index) => (
             <Swipeable
@@ -272,6 +281,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
+    position: "relative",
   },
   center: {
     flex: 1,
@@ -307,8 +317,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     alignItems: "center",
-    marginHorizontal: 120,
+    marginHorizontal: 130,
     marginTop: 10,
+    zIndex: 5,
   },
   moreButtonText: {
     fontSize: 18,
@@ -321,7 +332,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 12,
-    marginHorizontal: 120,
+    marginHorizontal: 130,
+    zIndex: 5,
   },
   nextButtonText: {
     fontSize: 20,
@@ -355,6 +367,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 0,
-    opacity: 0.6,
   },
 });

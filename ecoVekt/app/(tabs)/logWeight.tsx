@@ -97,7 +97,24 @@ export default function RegistrerVekt() {
       const raw = await AsyncStorage.getItem("pendingWasteEntries");
       const list = raw ? (JSON.parse(raw) as (typeof entry)[]) : [];
 
-      list.push(entry);
+      let indexToUpdate = -1;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const e = list[i];
+        if (
+          e.wasteId === effectiveWasteId &&
+          e.wasteTitle === effectiveWasteTitle &&
+          e.imageUrl === effectiveImageUrl
+        ) {
+          indexToUpdate = i;
+          break;
+        }
+      }
+
+      if (indexToUpdate !== -1) {
+        list[indexToUpdate] = entry;
+      } else {
+        list.push(entry);
+      }
 
       await AsyncStorage.setItem("pendingWasteEntries", JSON.stringify(list));
 
