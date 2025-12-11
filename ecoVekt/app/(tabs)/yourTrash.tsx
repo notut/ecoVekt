@@ -2,7 +2,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useCallback, useState } from "react";
 import {
@@ -47,6 +47,8 @@ type AggregatedEntry = {
 
 export default function YourTrash() {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [entries, setEntries] = useState<LocalEntry[]>([]);
   const [aggregated, setAggregated] = useState<AggregatedEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,8 +187,13 @@ export default function YourTrash() {
       <Header
         title="Ditt avfall"
         onBackPress={() => router.push("/(tabs)/logWeight")}
-        // 🔑 Linked profile navigation
-        onProfilePress={() => router.push("/(tabs)/admin/profile")}
+        //Henter historikk å gå tilbake til
+        onProfilePress={() =>
+          router.push({
+            pathname: "/(tabs)/admin/profile",
+            params: { from: pathname },
+          })
+        }        
         containerStyle={{
           height: 80,
           overflow: "hidden",
