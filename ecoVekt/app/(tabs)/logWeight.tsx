@@ -1,5 +1,5 @@
 // skjermen som skal registrere vekt
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -17,7 +17,6 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { auth } from "../../firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomLeaves } from "@/components/Bottom_leaves";
-import { TopLeaf } from "@/components/top_leaf";
 
 type RouteParams = {
   trashId?: string;
@@ -25,15 +24,36 @@ type RouteParams = {
   imageUrl?: string;
 };
 
+type SavedWaste = {
+  id: string;
+  title: string;
+  imageUrl: string;
+};
+
 export default function RegistrerVekt() {
   const router = useRouter();
   const { trashId, trashTitle, imageUrl } = useLocalSearchParams<RouteParams>();
   const [weight, setWeight] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [savedWaste, setSavedWaste] = useState<SavedWaste | null>(null);
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
+  useEffect(() => {
+    async function loadSaved() {
+      const raw = await AsyncStorage.getItem("lastSelectedWaste");
+      if (raw) {
+        setSavedWaste(JSON.parse(raw));
+      }
+    }
+    loadSaved();
+  }, []);
+
   const handleFullfor = async () => {
-    if (!trashTitle) {
+    const effectiveWasteId = trashId || savedWaste?.id || null;
+    const effectiveWasteTitle = trashTitle || savedWaste?.title || null;
+    const effectiveImageUrl = imageUrl || savedWaste?.imageUrl || null;
+
+    if (!effectiveWasteTitle) {
       Alert.alert("Feil", "Avfallstype mangler.");
       return;
     }
@@ -63,12 +83,12 @@ export default function RegistrerVekt() {
     const user = auth.currentUser;
 
     const entry = {
-      wasteId: trashId ?? null,
-      wasteTitle: trashTitle,
+      wasteId: effectiveWasteId,
+      wasteTitle: effectiveWasteTitle,
       amountKg: numericWeight,
       userId: user?.uid ?? null,
       savedAt: new Date().toISOString(),
-      imageUrl: imageUrl ?? null,
+      imageUrl: effectiveImageUrl,
     };
 
     try {
@@ -95,7 +115,6 @@ export default function RegistrerVekt() {
       <Header
         title="Registrer vekt"
         onBackPress={() => router.push("/(tabs)/chooseWaste")}
-        // 🔑 Linked profile navigation
         onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
           height: 80,
@@ -116,7 +135,9 @@ export default function RegistrerVekt() {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Valgt avfallstype</Text>
-          <Text style={styles.infoTitle}>{trashTitle}</Text>
+          <Text style={styles.infoTitle}>
+            {trashTitle || savedWaste?.title || "Ingen avfallstype valgt"}
+          </Text>
         </View>
 
         <View style={styles.labelRow}>
@@ -184,8 +205,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    gap: 18,
+    gap: 14,
   },
+  contentConteiner: {},
   stepWrapper: {
     alignItems: "center",
     marginTop: 12,
