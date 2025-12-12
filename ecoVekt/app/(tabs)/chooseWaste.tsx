@@ -13,6 +13,7 @@ import WasteCard from "@/components/wasteCard";
 import { useFocusEffect, useRouter } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
 import { Header } from "@/components/header";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type TrashType = {
   id: string;
@@ -74,7 +75,9 @@ export default function ChooseWaste() {
           setTrashTypes(types);
         } catch (err) {
           console.error("Error fetching trash types:", err);
-          setError("Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk.");
+          setError(
+            "Kunne ikke hente avfallstyper. Sjekk Firestore eller nettverk."
+          );
         } finally {
           setLoading(false);
         }
@@ -86,7 +89,16 @@ export default function ChooseWaste() {
     }, [])
   );
 
-  const handleSelect = (item: TrashType) => {
+  const handleSelect = async (item: TrashType) => {
+    await AsyncStorage.setItem(
+      "lastSelectedWaste",
+      JSON.stringify({
+        id: item.id,
+        title: item.title,
+        imageUrl: item.imageUrl ?? "",
+      })
+    );
+
     router.push({
       pathname: "/(tabs)/logWeight",
       params: {
@@ -115,13 +127,29 @@ export default function ChooseWaste() {
 
   return (
     <View style={styles.container}>
-      <Header title="Velg avfall" />
+      <Header
+        title="Velg avfall"
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
+        containerStyle={{
+          height: 80,
+          overflow: "hidden",
+          paddingLeft: 10,
+        }}
+        titleStyle={{
+          fontSize: 20,
+          color: "#FFFFFF",
+          fontWeight: "600",
+        }}
+      />
 
       <View style={styles.stepWrapper}>
         <StepProgress steps={steps} currentStep={1} />
       </View>
 
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
         {trashTypes.map((item) => (
           <WasteCard
             key={item.id}
