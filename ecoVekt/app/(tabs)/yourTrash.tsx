@@ -36,6 +36,7 @@ type LocalEntry = {
   imageUrl?: string | null;
 };
 
+/*
 type AggregatedEntry = {
   key: string;
   wasteId?: string | null;
@@ -44,13 +45,14 @@ type AggregatedEntry = {
   count: number;
   imageUrl?: string | null;
 };
+*/
 
 export default function YourTrash() {
   const router = useRouter();
   const pathname = usePathname();
 
   const [entries, setEntries] = useState<LocalEntry[]>([]);
-  const [aggregated, setAggregated] = useState<AggregatedEntry[]>([]);
+  //const [aggregated, setAggregated] = useState<AggregatedEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -63,6 +65,7 @@ export default function YourTrash() {
     return `${idPart}__${title}`;
   };
 
+  /*
   const recomputeAggregated = (list: LocalEntry[]) => {
     const map: Record<string, AggregatedEntry> = {};
 
@@ -88,6 +91,7 @@ export default function YourTrash() {
 
     return Object.values(map);
   };
+  */
 
   // Hent og aggreger lokale registreringer hver gang skjermen får fokus
   const fetchPending = useCallback(async () => {
@@ -98,11 +102,11 @@ export default function YourTrash() {
       const list: LocalEntry[] = raw ? JSON.parse(raw) : [];
 
       setEntries(list);
-      setAggregated(recomputeAggregated(list));
+      //setAggregated(recomputeAggregated(list));
     } catch (err) {
       console.error("Feil ved lesing av pendingWasteEntries:", err);
       setEntries([]);
-      setAggregated([]);
+      // setAggregated([]);
     } finally {
       setLoading(false);
     }
@@ -115,13 +119,13 @@ export default function YourTrash() {
   );
 
   // Slett én aggregert type (alle registreringer for den typen)
-  const handleDelete = async (key: string) => {
+  const handleDelete = async (index: number) => {
     // Filtrer bort alle entries som matcher denne aggregated-keyen
-    const newEntries = entries.filter((e) => buildKey(e) !== key);
-    const newAggregated = recomputeAggregated(newEntries);
+    const newEntries = entries.filter((_, i) => i !== index);
+    // const newAggregated = recomputeAggregated(newEntries);
 
     setEntries(newEntries);
-    setAggregated(newAggregated);
+    // setAggregated(newAggregated);
 
     if (newEntries.length === 0) {
       await AsyncStorage.removeItem("pendingWasteEntries");
@@ -135,7 +139,7 @@ export default function YourTrash() {
 
   // Fullfør: send alle summerte registreringer til Firestore, tøm localstorage og state
   const handleFullfor = async () => {
-    if (aggregated.length === 0) {
+    if (entries.length === 0) {
       Alert.alert("Ingen avfall", "Det er ingen registreringer å lagre.");
       return;
     }
@@ -145,21 +149,22 @@ export default function YourTrash() {
     try {
       setSaving(true);
 
-      for (const item of aggregated) {
+      for (const item of entries) {
         await addDoc(collection(db, "waste"), {
           wasteId: item.wasteId ?? null,
           wasteTitle: item.wasteTitle,
-          amountKg: item.totalKg,
+          amountKg: item.amountKg,
           timestamp: serverTimestamp(),
           userId: user?.uid ?? null,
           savedAt: new Date().toISOString(),
+          imageUrl: item.imageUrl ?? null,
         });
       }
 
       // Tøm localstorage og state etter at alt er sendt inn
       await AsyncStorage.removeItem("pendingWasteEntries");
       setEntries([]);
-      setAggregated([]);
+      // setAggregated([]);
 
       router.push("/(tabs)/successfullyRegistered");
     } catch (err) {
@@ -206,65 +211,76 @@ export default function YourTrash() {
         }}
       />
 
-      {/* Steg 3/3 */}
       <View style={styles.stepWrapper}>
         <StepProgress steps={steps} currentStep={3} />
       </View>
 
-      {aggregated.length === 0 ? (
-        <Text style={styles.empty}>
-          Ingen avfall registrert enda. Gå tilbake og registrer noe ♻️
-        </Text>
-      ) : (
-        aggregated.map((item) => (
-          <Swipeable
-            key={item.key}
-            renderRightActions={() => (
-              <View style={styles.deleteContainer}>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDelete(item.key)}
-                >
-                  <MaterialIcons name="delete" size={32} color="#fff" />
-                </TouchableOpacity>
+      <ScrollView
+        style={{ flex: 1, position: "relative", zIndex: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 150,
+        }}
+      >
+        {entries.length === 0 ? (
+          <>
+            <Text style={styles.empty}>Ingen avfall registrert enda.</Text>
+            <Text style={[styles.empty, { marginBottom: 30 }]}>
+              Gå tilbake for å registrere noe først ♻️
+            </Text>
+          </>
+        ) : (
+          entries.map((item, index) => (
+            <Swipeable
+              key={item.savedAt ?? `${item.wasteId ?? "no-id"}-${index}`}
+              renderRightActions={() => (
+                <View style={styles.deleteContainer}>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDelete(index)}
+                  >
+                    <MaterialIcons name="delete" size={32} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            >
+              <View style={styles.list}>
+                <WasteCard
+                  item={{
+                    title: item.wasteTitle ?? "Ukjent avfallstype",
+                    description: `${item.amountKg.toFixed(2)} kg`,
+                    imageUrl: item.imageUrl ?? null,
+                  }}
+                  onSelect={() => {}}
+                  compact
+                />
               </View>
-            )}
-          >
-            <WasteCard
-              item={{
-                title: item.wasteTitle,
-                description:
-                  item.count > 1
-                    ? `${item.totalKg} kg ( ${item.count} registreringer )`
-                    : `${item.totalKg} kg`,
-                imageUrl: item.imageUrl ?? null,
-              }}
-              onSelect={() => {}}
-              compact
-            />
-          </Swipeable>
-        ))
-      )}
+            </Swipeable>
+          ))
+        )}
 
-      {/* Mer avfall – beholder localstorage, går tilbake til valg av avfall */}
-      <TouchableOpacity
-        style={styles.moreButton}
-        onPress={() => router.push("/(tabs)/chooseWaste")}
-      >
-        <Text style={styles.moreButtonText}>Legg til mer</Text>
-      </TouchableOpacity>
+        {/* Mer avfall – beholder localstorage, går tilbake til valg av avfall */}
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => router.push("/(tabs)/chooseWaste")}
+        >
+          <Text style={styles.moreButtonText}>Legg til mer</Text>
+        </TouchableOpacity>
 
-      {/* Fullfør – sender til Firestore og tømmer localstorage */}
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={handleFullfor}
-        disabled={saving || aggregated.length === 0}
-      >
-        <Text style={styles.nextButtonText}>
-          {saving ? "Lagrer..." : "Fullfør"}
-        </Text>
-      </TouchableOpacity>
-      <BottomLeaves />
+        {/* Fullfør – sender til Firestore og tømmer localstorage */}
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleFullfor}
+          disabled={saving || entries.length === 0}
+        >
+          <Text style={styles.nextButtonText}>
+            {saving ? "Lagrer..." : "Fullfør"}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+      <View style={styles.leaves}>
+        <BottomLeaves />
+      </View>
     </View>
   );
 }
@@ -273,6 +289,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: BG,
+    position: "relative",
   },
   center: {
     flex: 1,
@@ -284,7 +301,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   list: {
-    flex: 1,
     paddingHorizontal: 16,
     marginTop: 8,
   },
@@ -309,8 +325,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     alignItems: "center",
-    marginHorizontal: 120,
+    marginHorizontal: 130,
     marginTop: 10,
+    zIndex: 5,
   },
   moreButtonText: {
     fontSize: 18,
@@ -323,7 +340,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 12,
-    marginHorizontal: 120,
+    marginHorizontal: 130,
+    zIndex: 5,
   },
   nextButtonText: {
     fontSize: 20,
@@ -350,5 +368,12 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
+  },
+  leaves: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
   },
 });
