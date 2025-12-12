@@ -1,9 +1,10 @@
-import { colors } from "@/components/colors";
-import AuthSessionProvider, { useAuthSession } from "@/providers/authctx";
+/*
+import { AuthContextProvider, useAuthSession } from "@/providers/authctx";
 import { router, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { colors } from "@/components/colors";
 
 function AuthGate() {
   const { userNameSession, isLoading } = useAuthSession();
@@ -12,8 +13,8 @@ function AuthGate() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inProtected = segments[0] === "(tabs)";
-    const onAuthScreen = segments[0] === "brukerregistrering";
+    const inProtected = segments[0] == "(tabs)";
+    const onAuthScreen = segments[0] == "brukerregistrering";
 
     if (!userNameSession && inProtected) {
       router.replace("/brukerregistrering/login");
@@ -37,12 +38,11 @@ function AuthGate() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AuthSessionProvider>
-          <AuthGate />
-        </AuthSessionProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <AuthContextProvider>
+        <AuthGate />
+      </AuthContextProvider>
+    </SafeAreaProvider>
   );
 }
+*/

@@ -1,49 +1,41 @@
-import { getData, signIn, uploadData } from "@/api/api";
-import { Alert, Pressable, Text, View } from "react-native";
+import { Redirect, Href } from "expo-router";
+import { useEffect, useState } from "react";
+import { auth, db } from "@/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
-export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Pressable
-        onPress={async () => {
-          const response = await uploadData({
-            name: "ecoVekt",
-            age: 1,
-            address: "Bergen",
-          });
-          if (response) {
-            Alert.alert("Error", response);
-          }
-        }}
-      >
-        <Text>Upload data</Text>
-      </Pressable>
+export default function TabsIndex() {
+  const [target, setTarget] = useState<Href | null>(null);
 
-      <Pressable
-        onPress={async () => {
-          const [data, error] = await getData();
-          if (error) {
-            Alert.alert("Error", error);
-            return;
-          }
-          console.log(data); // her må jeg bruke dataen til noe, sette den i en state eller noe lignende
-        }}
-      >
-        <Text>Get data</Text>
-      </Pressable>
-      <Pressable
-        onPress={async () => {
-          signIn("test@mail.no", "passord123");
-        }}
-      >
-        <Text>Log inn</Text>
-      </Pressable>
-    </View>
-  );
+  useEffect(() => {
+    const run = async () => {
+      const user = auth.currentUser;
+
+      // Ikke innlogget → til login
+      if (!user) {
+        setTarget("/brukerregistrering/login");
+        return;
+      }
+
+      // Hent brukerdata
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const data = snap.exists() ? snap.data() : {};
+      const selectedWaste = (data as any).selectedWaste;
+
+      const hasSelectedWaste =
+        Array.isArray(selectedWaste) && selectedWaste.length > 0;
+
+      // Ny bruker (kommer til welkommen
+      if (!hasSelectedWaste) {
+        setTarget("/(tabs)/welcome");
+      } else {
+        setTarget("/(tabs)/chooseWaste");
+      }
+    };
+
+    run();
+  }, []);
+
+  if (!target) return null;
+
+  return <Redirect href={target} />;
 }

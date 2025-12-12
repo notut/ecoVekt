@@ -1,23 +1,22 @@
-import React from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-  Platform,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { colors } from "@/components/colors";
 import {
-  Poppins_600SemiBold,
-  useFonts,
+    Poppins_600SemiBold,
+    useFonts,
 } from "@expo-google-fonts/poppins";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React from "react";
+import {
+    ActivityIndicator,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextStyle,
+    View,
+    ViewStyle
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type HeaderProps = {
   title: string;
@@ -63,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     );
   }
 
+  // Define handler only if needed for the Pressable (used if onProfilePress is truthy)
   const handleProfilePress =
     onProfilePress ?? (() => router.push("/(tabs)/admin/profile"));
 
@@ -96,16 +96,20 @@ export const Header: React.FC<HeaderProps> = ({
           {title}
         </Text>
 
-        {/* PROFILE */}
-        <Pressable
-          style={styles.profileButton}
-          onPress={handleProfilePress}
-          hitSlop={10}
-        >
-          <View style={styles.profileCircle}>
-            <Ionicons name="person" size={18} color={ICON_COLOR} />
-          </View>
-        </Pressable>
+        {/* PROFILE - MODIFIED TO BE CONDITIONAL */}
+        {onProfilePress ? (
+          <Pressable
+            style={styles.profileButton}
+            onPress={handleProfilePress}
+            hitSlop={10}
+          >
+            <View style={styles.profileCircle}>
+              <Ionicons name="person" size={18} color={ICON_COLOR} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={styles.iconPlaceholder} /> // Render placeholder to keep title centered
+        )}
       </View>
     </View>
   );

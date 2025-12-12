@@ -11,7 +11,10 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -22,7 +25,7 @@ type WasteCardProps = {
     imageUrl?: string | null;
   };
   onSelect?: (item: any) => void;
-  /** 
+  /**
    * compact = true:
    *  - ingen pil
    *  - ingen expand/collapse
@@ -31,7 +34,11 @@ type WasteCardProps = {
   compact?: boolean;
 };
 
-export default function WasteCard({ item, onSelect, compact = false }: WasteCardProps) {
+export default function WasteCard({
+  item,
+  onSelect,
+  compact = false,
+}: WasteCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const handlePress = () => {
@@ -99,13 +106,13 @@ export default function WasteCard({ item, onSelect, compact = false }: WasteCard
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8F7F5",
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
