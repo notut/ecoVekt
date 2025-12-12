@@ -106,13 +106,13 @@ export default function WasteCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8F7F5",
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
