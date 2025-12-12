@@ -1,16 +1,18 @@
+import BottomLeaves from "@/components/Bottom_leaves";
+import TopLeaf from "@/components/top_leaf";
 import {
-    Poppins_400Regular,
-    Poppins_700Bold,
-    useFonts,
+  Poppins_400Regular,
+  Poppins_700Bold,
+  useFonts,
 } from "@expo-google-fonts/poppins";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function Welcome() {
@@ -37,6 +39,7 @@ export default function Welcome() {
 
   return (
     <View style={styles.container}>
+      <TopLeaf />
       <View style={styles.textWrapper}>
         <Text style={styles.titleText}>Velkommen til ecoVekt!</Text>
         <Text style={styles.subtitleText}>
@@ -47,6 +50,7 @@ export default function Welcome() {
       <TouchableOpacity onPress={goToSetup} style={styles.bottomLink}>
         <Text style={styles.linkText}>Sett opp for din bedrift</Text>
       </TouchableOpacity>
+      <BottomLeaves />
     </View>
   );
 }
@@ -57,12 +61,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 40,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   textWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: 130,
   },
   titleText: {
     fontSize: 30,
@@ -79,6 +84,7 @@ const styles = StyleSheet.create({
   },
   bottomLink: {
     padding: 10,
+    paddingBottom: 150,
   },
   linkText: {
     fontSize: 15,

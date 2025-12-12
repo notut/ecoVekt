@@ -1,3 +1,4 @@
+/*
 import { Link } from "expo-router";
 import { StyleSheet } from "react-native";
 
@@ -27,3 +28,10 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
 });
+*/
+import React from "react";
+import { View } from "react-native";
+
+export default function ModalScreen() {
+  return <View style={{ flex: 1, backgroundColor: "#fff" }} />;
+}
