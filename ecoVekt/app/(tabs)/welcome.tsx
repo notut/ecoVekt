@@ -6,7 +6,6 @@ import {
   useFonts,
 } from "@expo-google-fonts/poppins";
 import { useRouter } from "expo-router";
-import React from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -17,14 +16,11 @@ import {
 
 export default function Welcome() {
   const router = useRouter();
-
-  // Load the Poppins font
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_700Bold,
   });
 
-  // Font Loading
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
