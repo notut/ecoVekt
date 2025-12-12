@@ -1,24 +1,34 @@
 import { colors } from "@/components/colors";
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { View, Text, Pressable, StyleSheet, StatusBar } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-// 💡 1. Import useRouter from expo-router
 import {
     Poppins_600SemiBold,
     useFonts,
 } from "@expo-google-fonts/poppins";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React from "react";
+import {
+    ActivityIndicator,
+    Pressable,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextStyle,
+    View,
+    ViewStyle
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type HeaderProps = {
   title: string;
   onBackPress?: () => void;
   onProfilePress?: () => void;
-  containerStyle?: any;
-  titleStyle?: any;
+  containerStyle?: ViewStyle;
+  titleStyle?: TextStyle;
 };
 
-const HEADER_BG = "#5F9D84";
+const HEADER_HEIGHT = 50; // 👈 høyere enn før
+const HEADER_BG = colors.mainGreen;
+const ICON_COLOR = colors.background;
 
 export const Header: React.FC<HeaderProps> = ({
   title,
@@ -28,42 +38,78 @@ export const Header: React.FC<HeaderProps> = ({
   titleStyle,
 }) => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  const [fontsLoaded] = useFonts({
+    Poppins_600SemiBold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View
+        style={[
+          styles.root,
+          {
+            height: HEADER_HEIGHT + insets.top,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+        <ActivityIndicator color={ICON_COLOR} />
+      </View>
+    );
+  }
+
+  // Define handler only if needed for the Pressable (used if onProfilePress is truthy)
+  const handleProfilePress =
+    onProfilePress ?? (() => router.push("/(tabs)/admin/profile"));
 
   return (
     <View
       style={[
         styles.root,
-        { paddingTop: insets.top, backgroundColor: HEADER_BG },
-        containerStyle,
+        {
+          paddingTop: insets.top,
+          height: HEADER_HEIGHT + insets.top,
+        },
       ]}
     >
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="light-content"
-      />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
-      <View style={styles.headerContainer}>
-        {/* Back button */}
-        <Pressable onPress={onBackPress} style={styles.iconButton} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-        </Pressable>
+      <View style={[styles.inner, containerStyle]}>
+        {/* BACK */}
+        {onBackPress ? (
+          <Pressable style={styles.iconButton} onPress={onBackPress} hitSlop={10}>
+            <Ionicons name="chevron-back" size={26} color={ICON_COLOR} />
+          </Pressable>
+        ) : (
+          <View style={styles.iconPlaceholder} />
+        )}
 
-        {/* Title */}
-        <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+        {/* TITLE */}
+        <Text
+          numberOfLines={1}
+          style={[styles.title, titleStyle]}
+        >
           {title}
         </Text>
 
-        {/* Profile button */}
-        <Pressable
-          onPress={onProfilePress}
-          style={styles.profileButton}
-          hitSlop={10}
-        >
-          <View style={styles.profileCircle}>
-            <Ionicons name="person" size={20} color="#FFFFFF" />
-          </View>
-        </Pressable>
+        {/* PROFILE - MODIFIED TO BE CONDITIONAL */}
+        {onProfilePress ? (
+          <Pressable
+            style={styles.profileButton}
+            onPress={handleProfilePress}
+            hitSlop={10}
+          >
+            <View style={styles.profileCircle}>
+              <Ionicons name="person" size={18} color={ICON_COLOR} />
+            </View>
+          </Pressable>
+        ) : (
+          <View style={styles.iconPlaceholder} /> // Render placeholder to keep title centered
+        )}
       </View>
     </View>
   );
@@ -72,40 +118,54 @@ export const Header: React.FC<HeaderProps> = ({
 const styles = StyleSheet.create({
   root: {
     width: "100%",
+    backgroundColor: HEADER_BG,
+
+    // ✅ Skygge under header
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 6,
   },
-  headerContainer: {
+
+  inner: {
+    flex: 1,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end", // 👈 gjør headeren “tyngre”
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    paddingTop: 10,
+    paddingBottom: 14,
   },
+
   iconButton: {
-    width: 32,
-    height: 32,
+    width: 40,
     justifyContent: "center",
-    alignItems: "flex-start",
   },
+
+  iconPlaceholder: {
+    width: 40,
+  },
+
   title: {
     flex: 1,
     textAlign: "center",
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    fontSize: 22,
+    color: ICON_COLOR,
+    fontFamily: "Poppins_600SemiBold",
   },
+
   profileButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
+    width: 40,
     alignItems: "flex-end",
+    justifyContent: "center",
   },
+
   profileCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    justifyContent: "center",
+    borderColor: ICON_COLOR,
     alignItems: "center",
+    justifyContent: "center",
   },
 });

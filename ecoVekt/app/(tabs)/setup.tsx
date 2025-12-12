@@ -1,6 +1,14 @@
+import { colors } from "@/components/colors";
+import { Header } from "@/components/header";
+import {
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  useFonts,
+} from "@expo-google-fonts/poppins";
 import { router } from "expo-router";
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,15 +20,20 @@ import {
 import TagsList from "../../components/TagsList";
 import { auth, db } from "../../firebaseConfig";
 
-// TrashType interface remains the same, but we will use 'title' for selection
 interface TrashType {
-  id: string; // Firebase Document ID (e.g., "1", "2", or a random string)
-  title: string; // The waste name (e.g., "Trevirke", "Glass og metall")
+  id: string;
+  title: string;
 }
 
 export default function SetupBusiness() {
+  // 👈 Load the Poppins fonts
+  let [fontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
+
   const [trashTypes, setTrashTypes] = useState<TrashType[]>([]);
-  // selected now holds an array of TITLES (strings like "Trevirke") instead of IDs
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -44,8 +57,8 @@ export default function SetupBusiness() {
 
         setTrashTypes(list);
       } catch (error) {
-          console.error("Error fetching trash types:", error);
-          Alert.alert("Error", "Could not load trash types.");
+        console.error("Error fetching trash types:", error);
+        Alert.alert("Error", "Could not load trash types.");
       } finally {
         setLoading(false);
       }
@@ -54,7 +67,6 @@ export default function SetupBusiness() {
     fetchTrashTypes();
   }, []);
 
-  // 🔑 CHANGE: toggleSelection now takes the TITLE (string)
   const toggleSelection = (title: string) => {
     setSelected((prev) =>
       prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
@@ -70,23 +82,20 @@ export default function SetupBusiness() {
     }
 
     if (selected.length === 0) {
-        Alert.alert("Info", "Vennligst velg minst én type avfall.");
-        return;
+      Alert.alert("Info", "Vennligst velg minst én type avfall.");
+      return;
     }
 
     setIsSaving(true);
     try {
-      const userDocRef = doc(db, "users", user.uid); 
-      
-      // 🔑 CRITICAL CHANGE: selected already holds the array of titles/names.
-      // This array is saved to the 'selectedWaste' field, compatible with the admin page.
+      const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, {
-        selectedWaste: selected, // This array now contains titles (e.g., ["Trevirke", "Glass og metall"])
+        selectedWaste: selected,
       }, { merge: true });
 
       // Navigate to the next screen using the corrected Expo Router path
-      router.replace("/(tabs)/chooseWaste"); 
-      
+      router.replace("/(tabs)/chooseWaste");
+
     } catch (error) {
       console.error("Error saving selected waste types:", error);
       Alert.alert("Feil", "Klarte ikke å lagre valget ditt. Vennligst prøv igjen.");
@@ -95,12 +104,18 @@ export default function SetupBusiness() {
     }
   };
 
-  if (loading || isSaving) {
+  // Custom back handler to navigate to the welcome page
+  const handleBack = () => {
+    router.replace("/welcome");
+  };
+
+  // If fonts are not loaded, show the loading indicator
+  if (!fontsLoaded || loading || isSaving) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#507C6D" />
-        <Text style={{ marginTop: 10, color: '#507C6D' }}>
-            {isSaving ? "Lagrer..." : "Laster inn..."}
+        <ActivityIndicator size="large" color={colors.darkGreen} />
+        <Text style={{ marginTop: 10, color: colors.darkGreen }}>
+          {isSaving ? "Lagrer..." : "Laster inn..."}
         </Text>
       </View>
     );
@@ -108,24 +123,50 @@ export default function SetupBusiness() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Velg hvilke typer avfall du bruker i din bedrift:</Text>
-      
-      {/* 🔑 CHANGE: TagsList now receives the TITLE for selection checking/toggling */}
-      <TagsList
-        items={trashTypes}
-        selectedItems={selected}
-        // TagsList must be updated to pass item.title, not item.id
-        onToggle={toggleSelection} 
+      {/* 👈 onBackPress PROP added to show the chevron and call handleBack */}
+      <Header
+        title="Sett opp din bedrift"
+        onBackPress={handleBack}
+        // onProfilePress is still omitted
+        containerStyle={{
+          height: 80,
+          overflow: "hidden",
+          paddingLeft: 10,
+          backgroundColor: colors.mainGreen, 
+        }}
+        // Updated titleStyle to use Poppins_600SemiBold
+        titleStyle={{
+          fontSize: 20,
+          color: colors.background, 
+          fontWeight: "600",
+          fontFamily: "Poppins_600SemiBold", 
+        }}
       />
-      
-      <Text style={styles.promptText}>Klar til å sette i gang?</Text>
+      {/* END HEADER */}
 
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleContinue}
-      >
-        <Text style={styles.buttonText}>Fortsett</Text>
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <Text style={styles.title}>Velg hvilke typer avfall du bruker i din bedrift:</Text>
+
+        <TagsList
+          items={trashTypes}
+          selectedItems={selected}
+          onToggle={toggleSelection}
+          // If TagsList doesn't use the colors, you might need to pass them:
+          // tagColor={colors.textBox}
+          // selectedTagColor={colors.darkGreen} 
+          // tagTextColor={colors.text}
+          // selectedTagTextColor={colors.background} 
+        />
+
+        <Text style={styles.promptText}>Klar til å sette i gang?</Text>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleContinue}
+        >
+          <Text style={styles.buttonText}>Fortsett</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -133,11 +174,12 @@ export default function SetupBusiness() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background, 
+  },
+  content: {
+    flex: 1,
     padding: 20,
-    backgroundColor: 'white',
-    // 🔑 CORRECTION: Removed marginTop: 120 and ensured paddingTop is sufficient
-    paddingTop: 40, // Keeping 40 as a good starting point for padding from the top
-    // marginTop: 120, <--- REMOVED THIS LINE
+    paddingTop: 40,
   },
   center: {
     flex: 1,
@@ -145,36 +187,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 30,
+    fontSize: 25,
     marginBottom: 20,
-    fontFamily: "Poppins_400Regular",
+    fontFamily: "Poppins_700Bold",
     textAlign: "left",
-    color: "#507C6D",
-    // Text automatically wraps unless specifically constrained (e.g., numberOfLines: 1)
+    color: colors.darkGreen, 
   },
-  // ⬆️ UPDATED: bottom: 90 -> 120 (Moved up 30 units)
   promptText: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "Poppins_400Regular",
-    color: "#507C6D",
+    color: colors.darkGreen, 
     textAlign: "center",
     position: "absolute",
-    bottom: 150, // Moved up from 90
-    alignSelf: "center",
+    bottom: 150,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
   },
-  // ⬆️ UPDATED: bottom: 30 -> 60 (Moved up 30 units)
   button: {
     position: "absolute",
-    bottom: 90, // Moved up from 30
+    bottom: 90,
     alignSelf: "center",
-    backgroundColor: "#507C6D",
+    backgroundColor: colors.darkGreen, 
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 12,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: colors.background, 
     fontSize: 16,
-    fontFamily: "Poppins_500Medium",
+    fontFamily: "Poppins_600SemiBold",
   },
 });

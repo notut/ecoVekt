@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuthSession } from "@/providers/authctx";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
@@ -60,6 +60,19 @@ export default function ProfilePage(): React.ReactElement {
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState<boolean>(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  //Brukes i tilbake knapp
+  const { from } = useLocalSearchParams<{ from?: string }>();
+
+  //Funksjon for tilbake knapp i header
+  const handleBack = () => {
+    if (from && typeof from === "string") {
+      router.replace(from as Href);
+      return;
+    }
+  
+    //Fallback tilbake
+    router.back();
+  };
 
   // basert på norske sorteringsfarger
   const wasteColorMap: Record<string, string> = {
@@ -353,7 +366,8 @@ export default function ProfilePage(): React.ReactElement {
       <View style={styles.header}>
         <Pressable
           style={styles.headerLeft}
-          onPress={() => router.push("/(tabs)/chooseWaste")}
+          //Henter funksjon for tilbake knapp
+          onPress={handleBack}
         >
           <Text style={styles.backText}>‹</Text>
         </Pressable>
@@ -532,8 +546,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 90,
-    paddingBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 12,
     paddingHorizontal: 14,
     backgroundColor: colors.mainGreen,
     borderBottomWidth: 1,
@@ -544,9 +558,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backText: {
-    fontSize: 28,
+    fontSize: 40,
     color: colors.background,
-    fontWeight: "600",
+    fontWeight: "400",
   },
   headerCenter: {
     flex: 1,

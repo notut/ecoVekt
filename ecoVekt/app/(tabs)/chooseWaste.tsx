@@ -12,8 +12,8 @@ import { StepProgress } from "@/components/stepProgress";
 import WasteCard from "@/components/wasteCard";
 import { useFocusEffect, useRouter } from "expo-router";
 import { auth, db } from "../../firebaseConfig";
-// 🔑 IMPORT: Importer Header komponentet
 import { Header } from "@/components/header";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type TrashType = {
   id: string;
@@ -23,7 +23,6 @@ type TrashType = {
 };
 
 const PRIMARY = "#5F9D84";
-const TEXT_DARK = "#486258";
 const BG = "#FFFFFF";
 
 export default function ChooseWaste() {
@@ -32,20 +31,18 @@ export default function ChooseWaste() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // 🔹 Stegene i prosessen – denne siden er alltid steg 1
   const steps = [{ id: 1 }, { id: 2 }, { id: 3 }];
 
   useFocusEffect(
     useCallback(() => {
       const fetchTrashTypes = async () => {
-        setLoading(true); 
-        setError(null); 
+        setLoading(true);
+        setError(null);
 
         try {
           const user = auth.currentUser;
           let allowedTitles: string[] | null = null;
 
-          // 1. Hent hvilke typer brukeren har valgt fra users/{uid}.selectedWaste
           if (user) {
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
@@ -56,7 +53,6 @@ export default function ChooseWaste() {
             }
           }
 
-          // 2. Hent alle avfallstyper fra "trash"
           const snapshot = await getDocs(collection(db, "trash"));
           let types: TrashType[] = [];
 
@@ -70,10 +66,8 @@ export default function ChooseWaste() {
             });
           });
 
-          // Sortér (samme som på SetupBusiness-siden)
           types.sort((a, b) => a.title.localeCompare(b.title));
 
-          // 3. Hvis brukeren har valgt typer → filtrer på title
           if (allowedTitles && allowedTitles.length > 0) {
             types = types.filter((t) => allowedTitles!.includes(t.title));
           }
@@ -91,18 +85,26 @@ export default function ChooseWaste() {
 
       fetchTrashTypes();
 
-      // Valgfri cleanup-funksjon (kjører når skjermen mister fokus)
-      
       return () => {};
     }, [])
-  ); 
+  );
 
-  const handleSelect = (item: TrashType) => {
+  const handleSelect = async (item: TrashType) => {
+    await AsyncStorage.setItem(
+      "lastSelectedWaste",
+      JSON.stringify({
+        id: item.id,
+        title: item.title,
+        imageUrl: item.imageUrl ?? "",
+      })
+    );
+
     router.push({
       pathname: "/(tabs)/logWeight",
       params: {
         trashId: item.id,
         trashTitle: item.title,
+        imageUrl: item.imageUrl ?? "",
       },
     });
   };
@@ -123,53 +125,36 @@ export default function ChooseWaste() {
     );
   }
 
-  // 🔹 HOVED-RENDER 
   return (
     <View style={styles.container}>
-      {/* 🔑 FIX: Bruk den delte Header komponenten for å sikre centering og safe area håndtering */}
       <Header
         title="Velg avfall"
-        // Vi trenger ikke onBackPress her da dette er steg 1
-        // Vi trenger heller ikke onProfilePress her i følge designet
+        onProfilePress={() => router.push("/(tabs)/admin/profile")}
         containerStyle={{
-            height: 80, // Sett total høyde
-            backgroundColor: PRIMARY, // Sett riktig farge
-            paddingHorizontal: 20,
-            paddingLeft: 10,
+          height: 80,
+          overflow: "hidden",
+          paddingLeft: 10,
         }}
         titleStyle={{
-            fontSize: 20,
-            // Fjern alle alignment/margin overrides for å sikre centering
-            fontWeight: "600",
-            color: "#FFFFFF",
+          fontSize: 20,
+          color: "#FFFFFF",
+          fontWeight: "600",
         }}
       />
 
-      {/* STEG-INDIKATOR */}
       <View style={styles.stepWrapper}>
         <StepProgress steps={steps} currentStep={1} />
       </View>
 
-      {/* LISTE MED AVFALLSKORT */}
       <ScrollView
         style={styles.list}
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         {trashTypes.map((item) => (
-          // inne i ChooseWaste
           <WasteCard
             key={item.id}
             item={item}
-            onSelect={(selected: TrashType) => {
-              router.push({
-                pathname: "/(tabs)/logWeight",
-                params: {
-                  trashId: selected.id,
-                  trashTitle: selected.title,
-                  imageUrl: selected.imageUrl ?? "",   
-                },
-              });
-            }}
+            onSelect={() => handleSelect(item)}
           />
         ))}
       </ScrollView>
@@ -186,24 +171,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // FIX: Fjern den gamle, manuelle header stilen
-  /*
-  header: {
-    backgroundColor: PRIMARY,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingTop: 40,
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  */
   list: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
+  },
+  stepWrapper: {
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 8,
   },
   errorText: {
     color: "red",
@@ -211,9 +187,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 24,
   },
-  stepWrapper: {
-  alignItems: "center",
-  marginTop: 12,
-  marginBottom: 8, 
-},
 });
