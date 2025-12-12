@@ -69,7 +69,7 @@ export default function ProfilePage(): React.ReactElement {
       router.replace(from as Href);
       return;
     }
-  
+
     //Fallback tilbake
     router.back();
   };
