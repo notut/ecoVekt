@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import TopLeaf from "@/components/top_leaf";
 import BottomLeaves from "@/components/Bottom_leaves";
-import { colors } from "@/components/colors"; 
+import { colors } from "@/components/colors";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function SuccessMessage() {
@@ -21,40 +21,40 @@ export default function SuccessMessage() {
 
   // ✅ Animasjonene (rent visuelt)
   useFocusEffect(
-  React.useCallback(() => {
-    // RESET verdier
-    topLeafY.setValue(-140);
-    bottomLeavesY.setValue(140);
-    contentOpacity.setValue(0);
+    React.useCallback(() => {
+      // RESET verdier
+      topLeafY.setValue(-140);
+      bottomLeavesY.setValue(140);
+      contentOpacity.setValue(0);
 
-    // START animasjon på nytt
-    Animated.parallel([
-      Animated.spring(topLeafY, {
-        toValue: 0,
-        tension: 45,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(bottomLeavesY, {
-        toValue: 0,
-        tension: 42,
-        friction: 6,
-        useNativeDriver: true,
-      }),
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 700,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    const timer = setTimeout(() => {
-      router.replace("/(tabs)/chooseWaste" as any);
-    }, 3000);
+      // START animasjon på nytt
+      Animated.parallel([
+        Animated.spring(topLeafY, {
+          toValue: 0,
+          tension: 45,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.spring(bottomLeavesY, {
+          toValue: 0,
+          tension: 42,
+          friction: 6,
+          useNativeDriver: true,
+        }),
+        Animated.timing(contentOpacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      const timer = setTimeout(() => {
+        router.replace("/(tabs)/chooseWaste" as any);
+      }, 3000);
 
-    // ✅ Cleanup når skjermen mister fokus
-    return () => clearTimeout(timer)
-  }, [])
-);
+      // ✅ Cleanup når skjermen mister fokus
+      return () => clearTimeout(timer);
+    }, [])
+  );
   return (
     <View style={styles.root}>
       {/* 🍃 Top leaf – faller ned */}
@@ -64,16 +64,16 @@ export default function SuccessMessage() {
 
       {/* 🍃 Bottom leaves – spretter lett opp */}
       <Animated.View
-  style={{
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    transform: [{ translateY: bottomLeavesY }],
-  }}
->
-  <BottomLeaves />
-</Animated.View>
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          transform: [{ translateY: bottomLeavesY }],
+        }}
+      >
+        <BottomLeaves />
+      </Animated.View>
 
       {/* ✅ Innhold fades rolig inn */}
       <Animated.View style={[styles.content, { opacity: contentOpacity }]}>
