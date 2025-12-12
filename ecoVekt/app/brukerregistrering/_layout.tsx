@@ -1,9 +1,10 @@
+/*
 import { AuthContextProvider, useAuthSession } from "@/providers/authctx";
 import { router, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { colors } from "@/components/colors"; // 👈
+import { colors } from "@/components/colors";
 
 function AuthGate() {
   const { userNameSession, isLoading } = useAuthSession();
@@ -44,3 +45,4 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+*/

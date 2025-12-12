@@ -12,14 +12,10 @@ export default function SuccessMessage() {
   const title = "Registrering vellykket!";
   const message = "Takk for at du tar vare på miljøet.";
   const delay = 3000;
-  // ✅ Animated values (starter utenfor skjermen)
   const topLeafY = useRef(new Animated.Value(-140)).current;
   const bottomLeavesY = useRef(new Animated.Value(140)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
-  // ✅ Redirect (URØRT FUNKSJONALITET)
-
-  // ✅ Animasjonene (rent visuelt)
   useFocusEffect(
     React.useCallback(() => {
       // RESET verdier
@@ -51,18 +47,16 @@ export default function SuccessMessage() {
         router.replace("/(tabs)/chooseWaste" as any);
       }, 3000);
 
-      // ✅ Cleanup når skjermen mister fokus
+      // Cleanup når skjermen mister fokus
       return () => clearTimeout(timer);
     }, [])
   );
   return (
     <View style={styles.root}>
-      {/* 🍃 Top leaf – faller ned */}
       <Animated.View style={{ transform: [{ translateY: topLeafY }] }}>
         <TopLeaf />
       </Animated.View>
 
-      {/* 🍃 Bottom leaves – spretter lett opp */}
       <Animated.View
         style={{
           position: "absolute",
@@ -75,7 +69,6 @@ export default function SuccessMessage() {
         <BottomLeaves />
       </Animated.View>
 
-      {/* ✅ Innhold fades rolig inn */}
       <Animated.View style={[styles.content, { opacity: contentOpacity }]}>
         <Text style={styles.header}>{title}</Text>
 
@@ -90,7 +83,6 @@ export default function SuccessMessage() {
   );
 }
 
-// 🎨 Styling
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -99,7 +91,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: "center",
-    paddingTop: 250,
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
   successIcon: {
     width: 70,
