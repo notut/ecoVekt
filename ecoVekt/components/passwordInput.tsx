@@ -24,6 +24,9 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         placeholder={placeholder}
         secureTextEntry={!showPassword}
         style={[styles.input, styles.passwordInput]}
+        autoComplete="off"
+        textContentType="none"
+        importantForAutofill="no"
       />
 
       <TouchableOpacity

@@ -11,7 +11,14 @@ import {
 import { useFocusEffect, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { auth, db } from "@/firebaseConfig";
-import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 
 type WasteType = {
@@ -26,7 +33,9 @@ export default function AddWasteScreen(): React.ReactElement {
   const [selected, setSelected] = useState<string[]>([]); // TITLES, ikke IDs
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [userUid, setUserUid] = useState<string | null>(auth.currentUser?.uid ?? null);
+  const [userUid, setUserUid] = useState<string | null>(
+    auth.currentUser?.uid ?? null
+  );
 
   const fetchWasteTypes = async () => {
     setLoading(true);
@@ -85,12 +94,14 @@ export default function AddWasteScreen(): React.ReactElement {
   );
 
   const toggleSelection = (title: string) => {
-    setSelected((prev) => (prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]));
+    setSelected((prev) =>
+      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title]
+    );
   };
 
   const handleSave = async () => {
     if (!userUid) {
-      router.replace("./profile");
+      router.back();
       return;
     }
 
@@ -106,10 +117,13 @@ export default function AddWasteScreen(): React.ReactElement {
         { merge: true }
       );
 
-      router.replace("./profile");
+      router.back();
     } catch (e) {
       console.error("Feil ved lagring av selectedWaste:", e);
-      Alert.alert("Feil", "Klarte ikke å lagre valget ditt. Vennligst prøv igjen.");
+      Alert.alert(
+        "Feil",
+        "Klarte ikke å lagre valget ditt. Vennligst prøv igjen."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -119,7 +133,9 @@ export default function AddWasteScreen(): React.ReactElement {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={styles.hint}>{isSaving ? "Lagrer..." : "Laster avfallstyper…"}</Text>
+        <Text style={styles.hint}>
+          {isSaving ? "Lagrer..." : "Laster avfallstyper…"}
+        </Text>
       </View>
     );
   }
@@ -129,7 +145,7 @@ export default function AddWasteScreen(): React.ReactElement {
       <View style={styles.header}>
         <View style={{ width: 40 }} />
         <Text style={styles.title}>Velg avfallstyper</Text>
-        <Pressable onPress={() => router.replace("./profile")} style={styles.backButton}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Feather name="x" size={26} color="#2f6f5b" />
         </Pressable>
       </View>
@@ -137,7 +153,8 @@ export default function AddWasteScreen(): React.ReactElement {
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.instructions}>
-            Trykk på de avfallstypene du vil legge til. Trykk på samme for å fjerne.
+            Trykk på de avfallstypene du vil legge til. Trykk på samme for å
+            fjerne.
           </Text>
 
           <View style={styles.chipsWrap}>
@@ -147,10 +164,20 @@ export default function AddWasteScreen(): React.ReactElement {
                 <Pressable
                   key={w.id}
                   onPress={() => toggleSelection(w.title)}
-                  style={[styles.chip, isSelected ? styles.chipActive : undefined]}
+                  style={[
+                    styles.chip,
+                    isSelected ? styles.chipActive : undefined,
+                  ]}
                   android_ripple={{ color: "rgba(0,0,0,0.08)" }}
                 >
-                  <Text style={[styles.chipText, isSelected ? styles.chipTextActive : undefined]}>{w.title}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isSelected ? styles.chipTextActive : undefined,
+                    ]}
+                  >
+                    {w.title}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -158,8 +185,17 @@ export default function AddWasteScreen(): React.ReactElement {
 
           <View style={{ height: 36 }} />
 
-          <Pressable onPress={handleSave} style={[styles.saveButton, isSaving ? styles.saveButtonDisabled : null]} disabled={isSaving}>
-            <Text style={styles.saveText}>{isSaving ? "Lagrer..." : `Lagre (${selected.length})`}</Text>
+          <Pressable
+            onPress={handleSave}
+            style={[
+              styles.saveButton,
+              isSaving ? styles.saveButtonDisabled : null,
+            ]}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveText}>
+              {isSaving ? "Lagrer..." : `Lagre (${selected.length})`}
+            </Text>
           </Pressable>
 
           <View style={{ height: 40 }} />
@@ -195,7 +231,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    justifyContent: "flex-start", 
+    justifyContent: "flex-start",
   },
 
   chip: {
