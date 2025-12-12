@@ -121,14 +121,10 @@ export default function AuthenticationScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        {/* NEDERSTE BLADER */}
         <View style={styles.leaves}>
           <BottomLeaves />
         </View>
-        {/* TOPP-BLAD */}
         <TopLeaf />
-
-        {/* LOGO */}
         <Image
           source={require("../../assets/images/ecovekt_logo.png")}
           style={styles.logo}
@@ -138,7 +134,6 @@ export default function AuthenticationScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* INNHOLD */}
           <View style={styles.content}>
             <View style={styles.inputContainer}>
               <TextInput
@@ -167,7 +162,6 @@ export default function AuthenticationScreen() {
                 style={styles.input}
               />
             </View>
-            {/* Epost */}
             <View style={styles.inputContainer}>
               <TextInput
                 value={userEmail}
@@ -176,10 +170,10 @@ export default function AuthenticationScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 style={styles.input}
+                autoComplete="off"
+                textContentType="none"
               />
             </View>
-
-            {/* Passord */}
             <View style={styles.inputContainer}>
               <PasswordInput
                 value={password}
@@ -194,8 +188,6 @@ export default function AuthenticationScreen() {
                 placeholder="Passord"
               />
             </View>
-
-            {/* Gjenta passord */}
             <View style={styles.inputContainer}>
               <PasswordInput
                 value={repeatPassword}
@@ -213,16 +205,12 @@ export default function AuthenticationScreen() {
                 <Text style={styles.errorText}>{passwordError}</Text>
               )}
             </View>
-
-            {/* Registrer-knapp */}
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={registerNewUser}
             >
               <Text style={styles.primaryButtonText}>Registrer</Text>
             </TouchableOpacity>
-
-            {/* Allerede bruker? Logg inn */}
             <View style={styles.registerRow}>
               <Text style={styles.registerText}>Allerede bruker? </Text>
               <TouchableOpacity onPress={() => setIsSignUp(false)}>

@@ -1,6 +1,8 @@
+import { colors } from "@/components/colors";
 import AuthSessionProvider, { useAuthSession } from "@/providers/authctx";
 import { router, Stack, useSegments } from "expo-router";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function AuthGate() {
@@ -27,6 +29,7 @@ function AuthGate() {
     <Stack
       screenOptions={{
         headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
       }}
     />
   );
@@ -34,10 +37,12 @@ function AuthGate() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthSessionProvider>
-        <AuthGate />
-      </AuthSessionProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthSessionProvider>
+          <AuthGate />
+        </AuthSessionProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
