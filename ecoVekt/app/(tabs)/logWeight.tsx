@@ -88,6 +88,7 @@ export default function RegistrerVekt() {
       wasteId: effectiveWasteId,
       wasteTitle: effectiveWasteTitle,
       amountKg: numericWeight,
+      registrations: 1,
       userId: user?.uid ?? null,
       savedAt: new Date().toISOString(),
       imageUrl: effectiveImageUrl,
@@ -112,10 +113,25 @@ export default function RegistrerVekt() {
         }
       }
 
+      /*
       if (indexToUpdate !== -1) {
         list[indexToUpdate] = entry;
       } else {
         list.push(entry);
+      }
+*/
+
+      if (indexToUpdate !== -1) {
+        const prev = list[indexToUpdate];
+
+        list[indexToUpdate] = {
+          ...prev,
+          amountKg: Number(prev.amountKg) + numericWeight,
+          registrations: (prev.registrations ?? 1) + 1, // 👈 ØK TELLEREN
+          savedAt: new Date().toISOString(),
+        };
+      } else {
+        list.push(entry); // entry har registrations: 1 allerede
       }
 
       await AsyncStorage.setItem("pendingWasteEntries", JSON.stringify(list));
