@@ -73,7 +73,7 @@ export default function SuccessMessage() {
         <Text style={styles.header}>{title}</Text>
 
         <Image
-          source={require("../../assets/images/success-icon-19.png")}
+          source={require("../../assets/images/verified.png")}
           style={styles.successIcon}
         />
 
