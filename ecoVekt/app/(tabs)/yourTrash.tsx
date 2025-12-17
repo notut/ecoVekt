@@ -187,7 +187,6 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.push("/(tabs)/logWeight")}
         //Henter historikk å gå tilbake til
         onProfilePress={() =>
           router.push({
