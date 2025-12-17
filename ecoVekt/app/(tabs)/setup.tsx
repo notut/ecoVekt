@@ -26,7 +26,6 @@ interface TrashType {
 }
 
 export default function SetupBusiness() {
-  // 👈 Load the Poppins fonts
   let [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_600SemiBold,
@@ -46,13 +45,11 @@ export default function SetupBusiness() {
 
         snapshot.forEach((d) => {
           const data = d.data() as any;
-          // We must ensure we get the title/name, just like the admin page does
           const title = data.title ?? data.name ?? String(d.id);
 
           list.push({ id: d.id, title: title });
         });
 
-        // The admin page sorts by title name, so we will do the same for consistency
         list.sort((a, b) => a.title.localeCompare(b.title));
 
         setTrashTypes(list);
@@ -97,7 +94,6 @@ export default function SetupBusiness() {
         { merge: true }
       );
 
-      // Navigate to the next screen using the corrected Expo Router path
       router.replace("/(tabs)/chooseWaste");
     } catch (error) {
       console.error("Error saving selected waste types:", error);
@@ -110,12 +106,10 @@ export default function SetupBusiness() {
     }
   };
 
-  // Custom back handler to navigate to the welcome page
   const handleBack = () => {
     router.replace("/welcome");
   };
 
-  // If fonts are not loaded, show the loading indicator
   if (!fontsLoaded || loading || isSaving) {
     return (
       <View style={styles.center}>
@@ -129,18 +123,16 @@ export default function SetupBusiness() {
 
   return (
     <View style={styles.container}>
-      {/* 👈 onBackPress PROP added to show the chevron and call handleBack */}
       <Header
         title="Sett opp din bedrift"
         onBackPress={handleBack}
-        // onProfilePress is still omitted
         containerStyle={{
           height: 80,
           overflow: "hidden",
           paddingLeft: 10,
           backgroundColor: colors.mainGreen,
         }}
-        // Updated titleStyle to use Poppins_600SemiBold
+
         titleStyle={{
           fontSize: 20,
           color: colors.background,
@@ -148,7 +140,6 @@ export default function SetupBusiness() {
           fontFamily: "Poppins_600SemiBold",
         }}
       />
-      {/* END HEADER */}
 
       <View style={styles.content}>
         <Text style={styles.title}>
@@ -159,11 +150,6 @@ export default function SetupBusiness() {
           items={trashTypes}
           selectedItems={selected}
           onToggle={toggleSelection}
-          // If TagsList doesn't use the colors, you might need to pass them:
-          // tagColor={colors.textBox}
-          // selectedTagColor={colors.darkGreen}
-          // tagTextColor={colors.text}
-          // selectedTagTextColor={colors.background}
         />
 
         <Text style={styles.promptText}>Klar til å sette i gang?</Text>
