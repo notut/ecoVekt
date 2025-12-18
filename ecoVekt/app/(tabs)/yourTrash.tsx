@@ -31,12 +31,12 @@ type LocalEntry = {
   wasteId?: string | null;
   wasteTitle?: string;
   amountKg: number;
+  registrations?: number;
   userId?: string | null;
   savedAt?: string;
   imageUrl?: string | null;
 };
 
-/*
 type AggregatedEntry = {
   key: string;
   wasteId?: string | null;
@@ -45,14 +45,13 @@ type AggregatedEntry = {
   count: number;
   imageUrl?: string | null;
 };
-*/
 
 export default function YourTrash() {
   const router = useRouter();
   const pathname = usePathname();
 
   const [entries, setEntries] = useState<LocalEntry[]>([]);
-  //const [aggregated, setAggregated] = useState<AggregatedEntry[]>([]);
+  const [aggregated, setAggregated] = useState<AggregatedEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -65,7 +64,6 @@ export default function YourTrash() {
     return `${idPart}__${title}`;
   };
 
-  /*
   const recomputeAggregated = (list: LocalEntry[]) => {
     const map: Record<string, AggregatedEntry> = {};
 
@@ -86,12 +84,11 @@ export default function YourTrash() {
       }
 
       map[key].totalKg += e.amountKg;
-      map[key].count += 1;
+      map[key].count += e.registrations ?? 1;
     });
 
     return Object.values(map);
   };
-  */
 
   // Hent og aggreger lokale registreringer hver gang skjermen får fokus
   const fetchPending = useCallback(async () => {
@@ -102,11 +99,11 @@ export default function YourTrash() {
       const list: LocalEntry[] = raw ? JSON.parse(raw) : [];
 
       setEntries(list);
-      //setAggregated(recomputeAggregated(list));
+      setAggregated(recomputeAggregated(list));
     } catch (err) {
       console.error("Feil ved lesing av pendingWasteEntries:", err);
       setEntries([]);
-      // setAggregated([]);
+      setAggregated([]);
     } finally {
       setLoading(false);
     }
@@ -119,13 +116,12 @@ export default function YourTrash() {
   );
 
   // Slett én aggregert type (alle registreringer for den typen)
-  const handleDelete = async (index: number) => {
-    // Filtrer bort alle entries som matcher denne aggregated-keyen
-    const newEntries = entries.filter((_, i) => i !== index);
-    // const newAggregated = recomputeAggregated(newEntries);
+  const handleDelete = async (key: string) => {
+    const newEntries = entries.filter((e) => buildKey(e) !== key);
+    //const newAggregated = recomputeAggregated(newEntries);
 
     setEntries(newEntries);
-    // setAggregated(newAggregated);
+    setAggregated(recomputeAggregated(newEntries));
 
     if (newEntries.length === 0) {
       await AsyncStorage.removeItem("pendingWasteEntries");
@@ -139,7 +135,7 @@ export default function YourTrash() {
 
   // Fullfør: send alle summerte registreringer til Firestore, tøm localstorage og state
   const handleFullfor = async () => {
-    if (entries.length === 0) {
+    if (aggregated.length === 0) {
       Alert.alert("Ingen avfall", "Det er ingen registreringer å lagre.");
       return;
     }
@@ -149,11 +145,11 @@ export default function YourTrash() {
     try {
       setSaving(true);
 
-      for (const item of entries) {
+      for (const item of aggregated) {
         await addDoc(collection(db, "waste"), {
           wasteId: item.wasteId ?? null,
           wasteTitle: item.wasteTitle,
-          amountKg: item.amountKg,
+          amountKg: item.totalKg,
           timestamp: serverTimestamp(),
           userId: user?.uid ?? null,
           savedAt: new Date().toISOString(),
@@ -164,7 +160,7 @@ export default function YourTrash() {
       // Tøm localstorage og state etter at alt er sendt inn
       await AsyncStorage.removeItem("pendingWasteEntries");
       setEntries([]);
-      // setAggregated([]);
+      setAggregated([]);
 
       router.push("/(tabs)/successfullyRegistered");
     } catch (err) {
@@ -191,14 +187,13 @@ export default function YourTrash() {
     <View style={styles.root}>
       <Header
         title="Ditt avfall"
-        onBackPress={() => router.push("/(tabs)/logWeight")}
         //Henter historikk å gå tilbake til
         onProfilePress={() =>
           router.push({
             pathname: "/(tabs)/admin/profile",
             params: { from: pathname },
           })
-        }        
+        }
         containerStyle={{
           height: 80,
           overflow: "hidden",
@@ -222,7 +217,7 @@ export default function YourTrash() {
           paddingBottom: 150,
         }}
       >
-        {entries.length === 0 ? (
+        {aggregated.length === 0 ? (
           <>
             <Text style={styles.empty}>Ingen avfall registrert enda.</Text>
             <Text style={[styles.empty, { marginBottom: 30 }]}>
@@ -230,14 +225,14 @@ export default function YourTrash() {
             </Text>
           </>
         ) : (
-          entries.map((item, index) => (
+          aggregated.map((item) => (
             <Swipeable
-              key={item.savedAt ?? `${item.wasteId ?? "no-id"}-${index}`}
+              key={item.key}
               renderRightActions={() => (
                 <View style={styles.deleteContainer}>
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => handleDelete(index)}
+                    onPress={() => handleDelete(item.key)}
                   >
                     <MaterialIcons name="delete" size={32} color="#fff" />
                   </TouchableOpacity>
@@ -248,7 +243,7 @@ export default function YourTrash() {
                 <WasteCard
                   item={{
                     title: item.wasteTitle ?? "Ukjent avfallstype",
-                    description: `${item.amountKg.toFixed(2)} kg`,
+                    description: `${item.totalKg} kg (${item.count} registreringer)`,
                     imageUrl: item.imageUrl ?? null,
                   }}
                   onSelect={() => {}}
@@ -271,7 +266,7 @@ export default function YourTrash() {
         <TouchableOpacity
           style={styles.nextButton}
           onPress={handleFullfor}
-          disabled={saving || entries.length === 0}
+          disabled={saving || aggregated.length === 0}
         >
           <Text style={styles.nextButtonText}>
             {saving ? "Lagrer..." : "Fullfør"}

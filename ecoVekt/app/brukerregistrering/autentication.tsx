@@ -15,8 +15,6 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useLocalSearchParams } from "expo-router";
 import LoginScreen from "./login";
-
-// Komponenter
 import { BottomLeaves } from "@/components/Bottom_leaves";
 import { TopLeaf } from "@/components/top_leaf";
 import { colors } from "@/components/colors";
@@ -38,6 +36,7 @@ export default function AuthenticationScreen() {
   const [repeatPassword, setRepeatPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // registrer en ny bruker
   const registerNewUser = async () => {
     const trimmedName = fullName.trim();
     const email = userEmail.trim();
